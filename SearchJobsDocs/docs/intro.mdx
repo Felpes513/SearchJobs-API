@@ -1,0 +1,35 @@
+---
+id: intro
+title: Search Jobs API
+---
+
+## Descricao
+
+Esta documentacao descreve a API `Search Jobs`, implementada em Spring Boot 3.5 com arquitetura em camadas (`application`, `domain`, `infrastructure`) e autenticacao baseada em JWT Bearer.
+
+## Visao Geral
+
+- Base path da API: `/api`
+- Modulo documentado no codigo atual: `auth`
+- Banco de dados configurado: PostgreSQL
+- Formato de autenticacao protegida: `Authorization: Bearer <token>`
+
+## Rotas Disponiveis
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+
+## Regras Tecnicas Relevantes
+
+- Todas as rotas em `/api/auth/**` sao publicas.
+- Qualquer outra rota da aplicacao exige autenticacao.
+- O access token e o refresh token sao gerados com JWT.
+- O access token expira em `900000 ms` (15 minutos).
+- O refresh token expira em `604800000 ms` (7 dias).
+
+## Referencias Internas
+
+- Controller: `AuthController`
+- Caso de uso: `AuthUseCase`
+- Servico: `AuthService`
+- Seguranca: `SecurityConfig`, `JwtAuthFilter`, `JwtService`

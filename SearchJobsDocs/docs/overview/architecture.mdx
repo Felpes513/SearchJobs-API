@@ -1,0 +1,44 @@
+---
+id: architecture
+title: Arquitetura da API
+---
+
+## Descricao
+
+Esta API segue uma separacao proxima de arquitetura hexagonal, com responsabilidades distribuidas entre camadas de aplicacao, dominio e infraestrutura.
+
+## Estrutura
+
+- `infrastructure/web/controller`: expoe as rotas HTTP
+- `application/dto/request`: define contratos de entrada
+- `application/dto/response`: define contratos de saida
+- `application/service`: concentra casos de uso e regras de negocio aplicacionais
+- `domain/model`: representa entidades de dominio
+- `domain/port/in`: contratos de entrada dos casos de uso
+- `domain/port/out`: contratos de saida para persistencia
+- `infrastructure/persistence`: implementacao JPA
+- `infrastructure/security`: JWT, filtro e integracao com Spring Security
+
+## Seguranca
+
+- Rotas liberadas: `/api/auth/**`, `/swagger-ui/**`, `/v3/api-docs/**`, `/swagger-ui.html`
+- Demais rotas exigem autenticacao
+- Politica de sessao: `STATELESS`
+- Filtro principal: `JwtAuthFilter`
+- Formato do header: `Authorization: Bearer <token>`
+
+## Modelo de Usuario
+
+Campos identificados no dominio e persistencia:
+
+- `id`
+- `nome`
+- `email`
+- `senhaHash`
+- `createdAt`
+
+## Observacoes Importantes
+
+- O Swagger/OpenAPI da aplicacao declara esquema HTTP Bearer JWT global.
+- As mensagens de texto no codigo-fonte apresentam problema de encoding, mas o comportamento funcional permanece o mesmo.
+- O projeto atual possui apenas duas rotas de negocio publicadas em controllers HTTP.

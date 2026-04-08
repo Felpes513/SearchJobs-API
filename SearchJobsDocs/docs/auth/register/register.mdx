@@ -1,0 +1,97 @@
+---
+id: auth-register
+title: Register
+---
+
+## Descricao
+
+Cria um novo usuario na plataforma a partir de nome, email e senha. A senha enviada no request nunca e persistida em texto puro: o servico aplica hash BCrypt antes de salvar.
+
+## Autenticacao
+
+- Necessita autenticacao: Nao
+- Tipo: Publica
+
+## Request
+
+### Metodo e URL
+
+`POST /api/auth/register`
+
+### Body
+
+```json
+{
+  "nome": "Felipe",
+  "email": "felipe@email.com",
+  "senha": "senha123"
+}
+```
+
+### Query Params
+
+Nenhum.
+
+### Path Params
+
+Nenhum.
+
+## Response
+
+### Sucesso
+
+Status: `201 Created`
+
+```json
+{
+  "mensagem": "Usuario cadastrado com sucesso"
+}
+```
+
+### Erros
+
+`400 Bad Request`
+
+Motivos mapeados no codigo e testes:
+
+- `nome` ausente ou em branco
+- `email` ausente
+- `email` em formato invalido
+- `senha` ausente
+- `senha` com menos de 6 caracteres
+- body vazio ou incompleto
+
+`500 Internal Server Error`
+
+Pode ocorrer no estado atual da implementacao quando o email ja esta cadastrado, porque o servico lanca `EmailAlreadyExistsException` e nao existe um handler HTTP explicito para converter essa excecao em outro status.
+
+Mensagem de negocio associada:
+
+```json
+{
+  "message": "Email ja cadastrado: felipe@email.com"
+}
+```
+
+## Validacoes
+
+- `nome` e obrigatorio
+- `email` e obrigatorio
+- `email` deve ter formato valido
+- `senha` e obrigatoria
+- `senha` deve ter no minimo 6 caracteres
+
+## Regras de Negocio
+
+- Nao permite cadastro com email duplicado.
+- Antes de persistir, a senha e convertida para hash com `BCryptPasswordEncoder`.
+- O registro persiste um novo usuario na tabela `users`.
+- O campo `createdAt` e definido automaticamente no `@PrePersist` da entidade JPA.
+
+## Fluxo Resumido
+
+1. Valida o body recebido com Bean Validation.
+2. Verifica se o email ja existe no repositorio.
+3. Gera o hash da senha com BCrypt.
+4. Persiste o usuario.
+5. Retorna mensagem de sucesso com `201 Created`.

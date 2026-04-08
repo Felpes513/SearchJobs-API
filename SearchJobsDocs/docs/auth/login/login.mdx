@@ -1,0 +1,98 @@
+---
+id: auth-login
+title: Login
+---
+
+## Descricao
+
+Autentica um usuario existente com email e senha. Quando as credenciais sao validas, a API retorna um `accessToken` e um `refreshToken` JWT.
+
+## Autenticacao
+
+- Necessita autenticacao: Nao
+- Tipo: Publica
+
+## Request
+
+### Metodo e URL
+
+`POST /api/auth/login`
+
+### Body
+
+```json
+{
+  "email": "felipe@email.com",
+  "senha": "senha123"
+}
+```
+
+### Query Params
+
+Nenhum.
+
+### Path Params
+
+Nenhum.
+
+## Response
+
+### Sucesso
+
+Status: `200 OK`
+
+```json
+{
+  "accessToken": "access-token",
+  "refreshToken": "refresh-token"
+}
+```
+
+### Erros
+
+`400 Bad Request`
+
+Exemplo de corpo invalido:
+
+```json
+{
+  "email": "",
+  "senha": "senha123"
+}
+```
+
+Motivos mapeados no codigo e testes:
+
+- email ausente
+- email em formato invalido
+- senha ausente
+
+`401 Unauthorized`
+
+Possivel quando o `AuthenticationManager` rejeita as credenciais, por exemplo em caso de email ou senha invalidos.
+
+`500 Internal Server Error`
+
+Possivel quando o usuario autentica, mas nao e encontrado na consulta posterior por email.
+
+## Validacoes
+
+- `email` e obrigatorio
+- `email` deve ter formato valido
+- `senha` e obrigatoria
+
+## Regras de Negocio
+
+- O login delega a validacao das credenciais ao `AuthenticationManager` do Spring Security.
+- A busca do usuario para geracao dos tokens e feita pelo email.
+- O `accessToken` e gerado com subject igual ao email do usuario.
+- O `refreshToken` e gerado separadamente, tambem com subject igual ao email.
+- Os tokens nao incluem payload customizado alem dos campos padrao de emissao, expiracao e subject.
+
+## Fluxo Resumido
+
+1. Valida o body recebido com Bean Validation.
+2. Tenta autenticar email e senha no Spring Security.
+3. Busca o usuario por email no repositorio.
+4. Gera `accessToken` e `refreshToken`.
+5. Retorna os tokens em `200 OK`.
