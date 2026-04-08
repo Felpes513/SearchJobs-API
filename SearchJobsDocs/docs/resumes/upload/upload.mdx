@@ -1,0 +1,110 @@
+---
+id: resumes-upload
+title: Upload de Curriculo
+---
+
+## Descricao
+
+Faz o upload de um curriculo em formato PDF. O arquivo e armazenado no servidor com um nome unico (UUID + nome original). O usuario e identificado automaticamente pelo JWT informado no header.
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+## Request
+
+### Metodo e URL
+
+`POST /api/resumes/upload`
+
+### Headers
+
+| Header          | Valor                              |
+|-----------------|------------------------------------|
+| Authorization   | `Bearer <access_token>`            |
+| Content-Type    | `multipart/form-data`              |
+
+### Form Data
+
+| Campo | Tipo   | Obrigatorio | Descricao                  |
+|-------|--------|-------------|----------------------------|
+| file  | File   | Sim         | Arquivo PDF do curriculo   |
+
+### Query Params
+
+Nenhum.
+
+### Path Params
+
+Nenhum.
+
+## Response
+
+### Sucesso
+
+Status: `201 Created`
+
+```json
+{
+  "id": 1,
+  "fileName": "curriculo-felipe.pdf",
+  "filePath": "uploads/resumes/a1b2c3d4-curriculo-felipe.pdf",
+  "createdAt": "2024-01-15T10:30:00"
+}
+```
+
+### Erros
+
+`400 Bad Request`
+
+Retornado quando o arquivo e invalido (nao e PDF ou esta vazio).
+
+```json
+{
+  "status": 400,
+  "erro": "Bad Request",
+  "mensagem": "Apenas arquivos PDF sao aceitos.",
+  "path": "/api/resumes/upload",
+  "timestamp": "2024-01-15T10:30:00"
+}
+```
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+`413 Payload Too Large`
+
+Retornado quando o arquivo excede o limite de 10 MB.
+
+```json
+{
+  "status": 413,
+  "erro": "Payload Too Large",
+  "mensagem": "Arquivo muito grande. Tamanho maximo permitido: 10MB",
+  "path": "/api/resumes/upload",
+  "timestamp": "2024-01-15T10:30:00"
+}
+```
+
+## Validacoes
+
+- Somente arquivos com extensao `.pdf` sao aceitos.
+- O arquivo nao pode estar vazio.
+- Tamanho maximo: 10 MB (configurado via `spring.servlet.multipart.max-file-size`).
+
+## Regras de Negocio
+
+- O ID do usuario e extraido diretamente do JWT, nao e necessario informar no request.
+- O arquivo e salvo com nome no formato `<UUID>-<nome_original>.pdf` para evitar colisoes.
+- O caminho de armazenamento e configurado via variavel de ambiente `STORAGE_RESUMES_DIR`.
+
+## Fluxo Resumido
+
+1. Extrai o `userId` do JWT no header `Authorization`.
+2. Valida o arquivo (extensao PDF e nao vazio).
+3. Salva o arquivo no diretorio de armazenamento.
+4. Persiste o registro na tabela `resumes`.
+5. Retorna os dados do curriculo com `201 Created`.

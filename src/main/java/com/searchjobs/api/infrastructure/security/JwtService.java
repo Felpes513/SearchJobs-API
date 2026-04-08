@@ -1,5 +1,6 @@
 package com.searchjobs.api.infrastructure.security;
 
+import com.searchjobs.api.domain.port.out.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -17,14 +18,18 @@ public class JwtService {
     private final long accessExpiration;
     private final long refreshExpiration;
 
+    private final UserRepository userRepository;
+
     public JwtService(
             @Value("${jwt.secret}") String secret,
             @Value("${jwt.expiration.access}") long accessExpiration,
-            @Value("${jwt.expiration.refresh}") long refreshExpiration
+            @Value("${jwt.expiration.refresh}") long refreshExpiration,
+            UserRepository userRepository
     ) {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.accessExpiration = accessExpiration;
         this.refreshExpiration = refreshExpiration;
+        this.userRepository = userRepository;
     }
 
     public String generateAccessToken(String email) {
@@ -62,5 +67,12 @@ public class JwtService {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    public Long extractUserId(String token) {
+        String email = extractEmail(token);
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"))
+                .getId();
     }
 }

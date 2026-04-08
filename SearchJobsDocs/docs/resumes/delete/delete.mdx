@@ -1,0 +1,93 @@
+---
+id: resumes-delete
+title: Deletar Curriculo
+---
+
+## Descricao
+
+Remove um curriculo do usuario autenticado. O registro e excluido do banco de dados e o arquivo PDF tambem e deletado do disco. O usuario so pode deletar seus proprios curriculos.
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+## Request
+
+### Metodo e URL
+
+`DELETE /api/resumes/{id}`
+
+### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+
+### Path Params
+
+| Parametro | Tipo | Obrigatorio | Descricao       |
+|-----------|------|-------------|-----------------|
+| id        | Long | Sim         | ID do curriculo |
+
+### Query Params
+
+Nenhum.
+
+### Body
+
+Nenhum.
+
+## Response
+
+### Sucesso
+
+Status: `204 No Content`
+
+Sem body de retorno.
+
+### Erros
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+```json
+{
+  "status": 401,
+  "erro": "Unauthorized",
+  "mensagem": "Token ausente ou invalido",
+  "path": "/api/resumes/1",
+  "timestamp": "2024-01-15T10:30:00"
+}
+```
+
+`404 Not Found`
+
+Retornado quando o curriculo nao existe ou nao pertence ao usuario autenticado.
+
+```json
+{
+  "status": 404,
+  "erro": "Not Found",
+  "mensagem": "Curriculo nao encontrado com id: 99",
+  "path": "/api/resumes/99",
+  "timestamp": "2024-01-15T10:30:00"
+}
+```
+
+## Regras de Negocio
+
+- O usuario so pode deletar curriculos que lhe pertencem.
+- Caso o curriculo exista mas pertenca a outro usuario, a API retorna `404` (sem vazar informacao de existencia).
+- O arquivo fisico no disco e removido junto com o registro no banco.
+
+## Fluxo Resumido
+
+1. Extrai o `userId` do JWT no header `Authorization`.
+2. Busca o curriculo pelo ID informado.
+3. Valida que o curriculo pertence ao usuario autenticado.
+4. Remove o arquivo PDF do disco.
+5. Remove o registro da tabela `resumes`.
+6. Retorna `204 No Content`.

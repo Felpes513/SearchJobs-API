@@ -1,35 +1,54 @@
 ---
 id: intro
 title: Search Jobs API
+sidebar_position: 1
 ---
 
 ## Descricao
 
-Esta documentacao descreve a API `Search Jobs`, implementada em Spring Boot 3.5 com arquitetura em camadas (`application`, `domain`, `infrastructure`) e autenticacao baseada em JWT Bearer.
+Esta documentacao descreve a API `Search Jobs`, implementada em Spring Boot 3.5 com arquitetura hexagonal (`application`, `domain`, `infrastructure`) e autenticacao baseada em JWT Bearer.
 
 ## Visao Geral
 
 - Base path da API: `/api`
-- Modulo documentado no codigo atual: `auth`
-- Banco de dados configurado: PostgreSQL
-- Formato de autenticacao protegida: `Authorization: Bearer <token>`
+- Banco de dados: PostgreSQL
+- Formato de autenticacao: `Authorization: Bearer <access_token>`
+- Upload de arquivos: multipart/form-data, somente PDF, maximo 10 MB
+- Extracao de dados: OpenAI GPT
 
 ## Rotas Disponiveis
 
-- `POST /api/auth/register`
-- `POST /api/auth/login`
+### Autenticacao (publicas)
+
+| Metodo | Rota                   | Descricao              |
+|--------|------------------------|------------------------|
+| POST   | `/api/auth/register`   | Registrar novo usuario |
+| POST   | `/api/auth/login`      | Autenticar usuario     |
+
+### Curriculos (requerem autenticacao)
+
+| Metodo | Rota                        | Descricao                             |
+|--------|-----------------------------|---------------------------------------|
+| POST   | `/api/resumes/upload`       | Enviar curriculo em PDF               |
+| GET    | `/api/resumes`              | Listar curriculos do usuario logado   |
+| POST   | `/api/resumes/{id}/extract` | Extrair dados do curriculo via IA     |
 
 ## Regras Tecnicas Relevantes
 
-- Todas as rotas em `/api/auth/**` sao publicas.
-- Qualquer outra rota da aplicacao exige autenticacao.
-- O access token e o refresh token sao gerados com JWT.
+- Rotas em `/api/auth/**` sao publicas.
+- Todas as demais rotas exigem token JWT valido no header `Authorization`.
 - O access token expira em `900000 ms` (15 minutos).
 - O refresh token expira em `604800000 ms` (7 dias).
+- Erros de validacao retornam `422 Unprocessable Entity` com mapa de campos invalidos.
+- O padrao de resposta de erro e `ErrorResponse` com os campos: `status`, `erro`, `mensagem`, `path`, `timestamp` e `campos` (somente em erros de validacao).
 
 ## Referencias Internas
 
-- Controller: `AuthController`
-- Caso de uso: `AuthUseCase`
-- Servico: `AuthService`
-- Seguranca: `SecurityConfig`, `JwtAuthFilter`, `JwtService`
+| Modulo         | Controller           | Caso de Uso                                          | Servico                                                |
+|----------------|----------------------|------------------------------------------------------|--------------------------------------------------------|
+| Autenticacao   | `AuthController`     | `AuthUseCase`                                        | `AuthService`                                          |
+| Curriculos     | `ResumeController`   | `ResumeUseCase`, `ResumeExtractionUseCase`           | `ResumeService`, `ResumeExtractionService`             |
+
+## Swagger UI
+
+A documentacao interativa esta disponivel em `http://localhost:8080/swagger-ui.html` com todos os endpoints, schemas e exemplos de request/response.

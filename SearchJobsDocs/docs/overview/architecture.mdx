@@ -5,40 +5,118 @@ title: Arquitetura da API
 
 ## Descricao
 
-Esta API segue uma separacao proxima de arquitetura hexagonal, com responsabilidades distribuidas entre camadas de aplicacao, dominio e infraestrutura.
+Esta API segue arquitetura hexagonal, com responsabilidades distribuidas entre camadas de aplicacao, dominio e infraestrutura.
 
-## Estrutura
+## Estrutura de Pastas
 
-- `infrastructure/web/controller`: expoe as rotas HTTP
-- `application/dto/request`: define contratos de entrada
-- `application/dto/response`: define contratos de saida
-- `application/service`: concentra casos de uso e regras de negocio aplicacionais
-- `domain/model`: representa entidades de dominio
-- `domain/port/in`: contratos de entrada dos casos de uso
-- `domain/port/out`: contratos de saida para persistencia
-- `infrastructure/persistence`: implementacao JPA
-- `infrastructure/security`: JWT, filtro e integracao com Spring Security
+```
+src/main/java/com/searchjobs/api/
+├── application/
+│   ├── dto/request/          # Contratos de entrada (LoginRequest, RegisterRequest)
+│   ├── dto/response/         # Contratos de saida (AuthResponse, ResumeResponse, ...)
+│   └── service/              # Casos de uso aplicacionais (AuthService, ResumeService, ...)
+├── config/                   # Configuracoes (SecurityConfig, SwaggerConfig, CorsConfig)
+├── domain/
+│   ├── exception/            # Excecoes de dominio (EmailAlreadyExistsException, ...)
+│   ├── model/                # Entidades de dominio (User, Resume)
+│   └── port/
+│       ├── in/               # Contratos de entrada dos casos de uso (AuthUseCase, ...)
+│       └── out/              # Contratos de saida para persistencia e IA (UserRepository, ...)
+└── infrastructure/
+    ├── ai/                   # Integracao com OpenAI (OpenAiExtractionAdapter)
+    ├── persistence/
+    │   ├── adapter/          # Implementacao dos ports de persistencia
+    │   ├── entity/           # Entidades JPA (UserJpaEntity, ResumeJpaEntity)
+    │   └── repository/       # Spring Data JPA Repositories
+    ├── security/             # JWT, filtro e integracao com Spring Security
+    └── web/
+        ├── controller/       # Controllers HTTP (AuthController, ResumeController)
+        └── handler/          # Tratamento global de excecoes (GlobalExceptionHandler)
+```
 
 ## Seguranca
 
-- Rotas liberadas: `/api/auth/**`, `/swagger-ui/**`, `/v3/api-docs/**`, `/swagger-ui.html`
-- Demais rotas exigem autenticacao
+- Rotas publicas: `/api/auth/**`, `/swagger-ui/**`, `/v3/api-docs/**`, `/swagger-ui.html`
+- Demais rotas exigem autenticacao via JWT
 - Politica de sessao: `STATELESS`
 - Filtro principal: `JwtAuthFilter`
 - Formato do header: `Authorization: Bearer <token>`
 
-## Modelo de Usuario
+## Modelos de Dominio
 
-Campos identificados no dominio e persistencia:
+### User
 
-- `id`
-- `nome`
-- `email`
-- `senhaHash`
-- `createdAt`
+| Campo       | Tipo            | Descricao                        |
+|-------------|-----------------|----------------------------------|
+| id          | Long            | Identificador unico              |
+| nome        | String          | Nome completo                    |
+| email       | String          | Email (unico)                    |
+| senhaHash   | String          | Senha encriptada com BCrypt      |
+| createdAt   | LocalDateTime   | Data de criacao (auto-preenchida)|
 
-## Observacoes Importantes
+### Resume
 
-- O Swagger/OpenAPI da aplicacao declara esquema HTTP Bearer JWT global.
-- As mensagens de texto no codigo-fonte apresentam problema de encoding, mas o comportamento funcional permanece o mesmo.
-- O projeto atual possui apenas duas rotas de negocio publicadas em controllers HTTP.
+| Campo         | Tipo            | Descricao                                    |
+|---------------|-----------------|----------------------------------------------|
+| id            | Long            | Identificador unico                          |
+| userId        | Long            | ID do usuario dono do curriculo              |
+| fileName      | String          | Nome original do arquivo                     |
+| filePath      | String          | Caminho de armazenamento interno             |
+| extractedText | String          | Texto bruto extraido do PDF via PDFBox       |
+| parsedJson    | String          | JSON estruturado gerado pela IA (JSONB)      |
+| createdAt     | LocalDateTime   | Data de upload (auto-preenchida)             |
+
+## Tratamento de Erros
+
+Todos os erros seguem o padrao `ErrorResponse`:
+
+```json
+{
+  "status": 422,
+  "erro": "Validation Error",
+  "mensagem": "Erro de validacao nos campos",
+  "path": "/api/auth/register",
+  "timestamp": "2024-01-15T10:30:00",
+  "campos": {
+    "email": "Email invalido",
+    "senha": "Senha deve ter no minimo 6 caracteres"
+  }
+}
+```
+
+O campo `campos` so aparece em erros de validacao (`422`).
+
+### Mapeamento de Excecoes
+
+| Excecao                        | Status HTTP |
+|-------------------------------|-------------|
+| EmailAlreadyExistsException   | 409         |
+| BadCredentialsException       | 401         |
+| MethodArgumentNotValidException | 422       |
+| IllegalArgumentException      | 400         |
+| MaxUploadSizeExceededException | 413        |
+| RateLimitException (OpenAI)   | 503         |
+| OpenAIException               | 502         |
+| RuntimeException              | 500         |
+
+## Integracao com IA
+
+O servico `ResumeExtractionService` extrai texto do PDF usando Apache PDFBox e envia ao modelo GPT via `OpenAiExtractionAdapter`. O retorno e um JSON estruturado com os campos:
+
+```json
+{
+  "nome": "...",
+  "email": "...",
+  "telefone": "...",
+  "skills": [],
+  "experiencias": [],
+  "certificacoes": [],
+  "projetos": []
+}
+```
+
+## Observacoes
+
+- O Swagger/OpenAPI declara esquema HTTP Bearer JWT global, disponivel em `/swagger-ui.html`.
+- Arquivos PDF enviados sao armazenados localmente no diretorio configurado em `STORAGE_RESUMES_DIR`.
+- Variaveis sensiveis (senha do banco, JWT secret, chave OpenAI) sao carregadas via `.env` com a biblioteca `spring-dotenv`.

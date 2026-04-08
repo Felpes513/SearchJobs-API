@@ -1,0 +1,129 @@
+---
+id: resumes-extract
+title: Extrair Dados do Curriculo
+---
+
+## Descricao
+
+Extrai e estrutura os dados de um curriculo previamente enviado utilizando IA (OpenAI GPT). O texto do PDF e extraido via Apache PDFBox e enviado ao modelo GPT para geracao de um JSON estruturado com as informacoes do candidato.
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+## Request
+
+### Metodo e URL
+
+`POST /api/resumes/{id}/extract`
+
+### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+
+### Path Params
+
+| Parametro | Tipo | Obrigatorio | Descricao              |
+|-----------|------|-------------|------------------------|
+| id        | Long | Sim         | ID do curriculo        |
+
+### Query Params
+
+Nenhum.
+
+### Body
+
+Nenhum.
+
+## Response
+
+### Sucesso
+
+Status: `200 OK`
+
+```json
+{
+  "resumeId": 1,
+  "parsedJson": "{\"nome\":\"Felipe Souza\",\"email\":\"felipe@email.com\",\"telefone\":\"(11) 99999-9999\",\"skills\":[\"Java\",\"Spring Boot\",\"PostgreSQL\"],\"experiencias\":[{\"cargo\":\"Dev Backend\",\"empresa\":\"Empresa X\",\"periodo\":\"2022-2024\"}],\"certificacoes\":[\"AWS Cloud Practitioner\"],\"projetos\":[{\"nome\":\"SearchJobs\",\"descricao\":\"API de busca de vagas\"}]}",
+  "mensagem": "Curriculo extraido com sucesso"
+}
+```
+
+O campo `parsedJson` e uma string JSON com os seguintes campos possiveis:
+
+| Campo         | Tipo   | Descricao                              |
+|---------------|--------|----------------------------------------|
+| nome          | String | Nome completo do candidato             |
+| email         | String | Email do candidato                     |
+| telefone      | String | Telefone de contato                    |
+| skills        | Array  | Lista de habilidades tecnicas          |
+| experiencias  | Array  | Lista de experiencias profissionais    |
+| certificacoes | Array  | Lista de certificacoes                 |
+| projetos      | Array  | Lista de projetos relevantes           |
+
+### Erros
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+`404 Not Found`
+
+Retornado quando nao existe curriculo com o ID informado.
+
+```json
+{
+  "status": 404,
+  "erro": "Not Found",
+  "mensagem": "Curriculo nao encontrado com id: 99",
+  "path": "/api/resumes/99/extract",
+  "timestamp": "2024-01-15T10:30:00"
+}
+```
+
+`502 Bad Gateway`
+
+Retornado quando ocorre erro de comunicacao com o servico OpenAI.
+
+```json
+{
+  "status": 502,
+  "erro": "Bad Gateway",
+  "mensagem": "Erro ao comunicar com o servico de IA",
+  "path": "/api/resumes/1/extract",
+  "timestamp": "2024-01-15T10:30:00"
+}
+```
+
+`503 Service Unavailable`
+
+Retornado quando o servico OpenAI atinge o limite de requisicoes (rate limit).
+
+```json
+{
+  "status": 503,
+  "erro": "Service Unavailable",
+  "mensagem": "Servico de IA temporariamente indisponivel. Tente novamente em alguns instantes.",
+  "path": "/api/resumes/1/extract",
+  "timestamp": "2024-01-15T10:30:00"
+}
+```
+
+## Regras de Negocio
+
+- O curriculo precisa ter sido previamente enviado via `POST /api/resumes/upload`.
+- O texto e extraido do PDF usando Apache PDFBox.
+- O JSON gerado pela IA e persistido no campo `parsedJson` da tabela `resumes` (tipo JSONB no PostgreSQL).
+- Campos nao encontrados no curriculo podem estar ausentes ou nulos no JSON retornado.
+
+## Fluxo Resumido
+
+1. Busca o curriculo pelo ID informado.
+2. Extrai o texto bruto do arquivo PDF via PDFBox.
+3. Envia o texto ao modelo GPT via OpenAI API.
+4. Persiste o texto extraido e o JSON estruturado no banco.
+5. Retorna o resultado com `200 OK`.
