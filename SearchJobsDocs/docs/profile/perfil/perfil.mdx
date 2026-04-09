@@ -1,0 +1,137 @@
+---
+id: profile-perfil
+title: Perfil
+---
+
+## Descricao
+
+Endpoints para consultar e atualizar as informacoes principais do perfil do usuario autenticado (resumo profissional, cidade, estado, LinkedIn e GitHub).
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+---
+
+## GET /api/profile
+
+Retorna os dados do perfil do usuario autenticado.
+
+### Request
+
+#### Metodo e URL
+
+`GET /api/profile`
+
+#### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+
+#### Query Params
+
+Nenhum.
+
+#### Body
+
+Nenhum.
+
+### Response
+
+#### Sucesso
+
+Status: `200 OK`
+
+```json
+{
+  "id": 1,
+  "resumoProfissional": "Desenvolvedor backend com foco em Java e Spring Boot.",
+  "cidade": "Sao Paulo",
+  "estado": "SP",
+  "linkedinUrl": "https://linkedin.com/in/usuario",
+  "githubUrl": "https://github.com/usuario"
+}
+```
+
+#### Erros
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+---
+
+## PUT /api/profile
+
+Atualiza os dados do perfil do usuario autenticado. Todos os campos sao opcionais — apenas os informados serao persistidos.
+
+### Request
+
+#### Metodo e URL
+
+`PUT /api/profile`
+
+#### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+| Content-Type  | `application/json`      |
+
+#### Body
+
+```json
+{
+  "resumoProfissional": "Desenvolvedor backend com foco em Java e Spring Boot.",
+  "cidade": "Sao Paulo",
+  "estado": "SP",
+  "linkedinUrl": "https://linkedin.com/in/usuario",
+  "githubUrl": "https://github.com/usuario"
+}
+```
+
+| Campo               | Tipo   | Obrigatorio | Descricao                        |
+|---------------------|--------|-------------|----------------------------------|
+| resumoProfissional  | String | Nao         | Resumo/bio profissional          |
+| cidade              | String | Nao         | Cidade de residencia             |
+| estado              | String | Nao         | UF (ex: SP, RJ)                  |
+| linkedinUrl         | String | Nao         | URL do perfil no LinkedIn        |
+| githubUrl           | String | Nao         | URL do perfil no GitHub          |
+
+### Response
+
+#### Sucesso
+
+Status: `200 OK`
+
+```json
+{
+  "id": 1,
+  "resumoProfissional": "Desenvolvedor backend com foco em Java e Spring Boot.",
+  "cidade": "Sao Paulo",
+  "estado": "SP",
+  "linkedinUrl": "https://linkedin.com/in/usuario",
+  "githubUrl": "https://github.com/usuario"
+}
+```
+
+#### Erros
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+## Regras de Negocio
+
+- O ID do usuario e extraido diretamente do JWT, nao e necessario informar no request.
+- O PUT realiza upsert: cria o perfil caso ainda nao exista, ou atualiza o existente.
+
+## Fluxo Resumido (PUT)
+
+1. Extrai o `userId` do JWT no header `Authorization`.
+2. Busca o perfil existente do usuario.
+3. Atualiza os campos recebidos no body.
+4. Persiste e retorna o perfil atualizado com `200 OK`.

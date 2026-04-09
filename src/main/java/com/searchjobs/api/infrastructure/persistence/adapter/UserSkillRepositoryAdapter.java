@@ -1,5 +1,6 @@
 package com.searchjobs.api.infrastructure.persistence.adapter;
 
+import com.searchjobs.api.domain.model.UserSkill;
 import com.searchjobs.api.domain.port.out.UserSkillRepository;
 import com.searchjobs.api.infrastructure.persistence.entity.UserSkillJpaEntity;
 import com.searchjobs.api.infrastructure.persistence.repository.UserSkillJpaRepository;
@@ -31,5 +32,18 @@ public class UserSkillRepositoryAdapter implements UserSkillRepository {
     @Transactional
     public void deleteByUserId(Long userId) {
         jpaRepository.deleteByUserId(userId);
+    }
+
+    @Override
+    public List<UserSkill> findAllByUserId(Long userId) {
+        return jpaRepository.findAllByUserId(userId)
+                .stream()
+                .map(e -> UserSkill.builder()
+                        .id(e.getId())
+                        .userId(e.getUserId())
+                        .nomeSkill(e.getNomeSkill())
+                        .nivel(e.getNivel())
+                        .build())
+                .toList();
     }
 }

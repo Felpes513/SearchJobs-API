@@ -18,14 +18,22 @@ public class UserProfileRepositoryAdapter implements UserProfileRepository {
 
     @Override
     public UserProfile save(UserProfile profile) {
-        UserProfileJpaEntity entity = UserProfileJpaEntity.builder()
-                .userId(profile.getUserId())
-                .resumoProfissional(profile.getResumoProfissional())
-                .cidade(profile.getCidade())
-                .estado(profile.getEstado())
-                .linkedinUrl(profile.getLinkedinUrl())
-                .githubUrl(profile.getGithubUrl())
-                .build();
+        UserProfileJpaEntity entity;
+
+        if (profile.getId() != null) {
+            entity = jpaRepository.findById(profile.getId())
+                    .orElse(new UserProfileJpaEntity());
+        } else {
+            entity = jpaRepository.findByUserId(profile.getUserId())
+                    .orElse(new UserProfileJpaEntity());
+        }
+
+        entity.setUserId(profile.getUserId());
+        entity.setResumoProfissional(profile.getResumoProfissional());
+        entity.setCidade(profile.getCidade());
+        entity.setEstado(profile.getEstado());
+        entity.setLinkedinUrl(profile.getLinkedinUrl());
+        entity.setGithubUrl(profile.getGithubUrl());
 
         return toDomain(jpaRepository.save(entity));
     }

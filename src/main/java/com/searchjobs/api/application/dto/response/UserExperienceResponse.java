@@ -1,14 +1,12 @@
-package com.searchjobs.api.domain.model;
+package com.searchjobs.api.application.dto.response;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
 
 @Getter
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class UserExperience {
+public class UserExperienceResponse {
     private Long id;
-    private Long userId;
     private String cargo;
     private String empresa;
     private String descricao;

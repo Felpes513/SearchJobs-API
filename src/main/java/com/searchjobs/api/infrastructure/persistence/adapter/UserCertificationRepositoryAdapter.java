@@ -34,4 +34,18 @@ public class UserCertificationRepositoryAdapter implements UserCertificationRepo
     public void deleteByUserId(Long userId) {
         jpaRepository.deleteByUserId(userId);
     }
+
+    @Override
+    public List<UserCertification> findAllByUserId(Long userId) {
+        return jpaRepository.findAllByUserId(userId)
+                .stream()
+                .map(c -> UserCertification.builder()
+                        .id(c.getId())
+                        .userId(c.getUserId())
+                        .nomeCertificacao(c.getNomeCertificacao())
+                        .instituicao(c.getInstituicao())
+                        .dataObtencao(c.getDataObtencao())
+                        .build())
+                .toList();
+    }
 }

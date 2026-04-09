@@ -1,0 +1,146 @@
+---
+id: profile-experiences
+title: Experiences
+---
+
+## Descricao
+
+Endpoints para consultar e atualizar as experiencias profissionais do usuario autenticado. A operacao de atualizacao substitui completamente a lista existente.
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+---
+
+## GET /api/profile/experiences
+
+Retorna todas as experiencias profissionais do usuario autenticado.
+
+### Request
+
+#### Metodo e URL
+
+`GET /api/profile/experiences`
+
+#### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+
+#### Query Params
+
+Nenhum.
+
+#### Body
+
+Nenhum.
+
+### Response
+
+#### Sucesso
+
+Status: `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "cargo": "Desenvolvedor Backend",
+    "empresa": "Empresa XYZ",
+    "descricao": "Desenvolvimento de APIs REST com Java e Spring Boot.",
+    "dataInicio": "2022-01",
+    "dataFim": "2024-01"
+  }
+]
+```
+
+#### Erros
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+---
+
+## PUT /api/profile/experiences
+
+Substitui completamente as experiencias profissionais do usuario autenticado pela lista fornecida.
+
+### Request
+
+#### Metodo e URL
+
+`PUT /api/profile/experiences`
+
+#### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+| Content-Type  | `application/json`      |
+
+#### Body
+
+```json
+{
+  "experiencias": [
+    {
+      "cargo": "Desenvolvedor Backend",
+      "empresa": "Empresa XYZ",
+      "descricao": "Desenvolvimento de APIs REST com Java e Spring Boot.",
+      "dataInicio": "2022-01",
+      "dataFim": "2024-01"
+    }
+  ]
+}
+```
+
+| Campo       | Tipo   | Obrigatorio | Descricao                              |
+|-------------|--------|-------------|----------------------------------------|
+| cargo       | String | Nao         | Cargo ocupado                          |
+| empresa     | String | Nao         | Nome da empresa                        |
+| descricao   | String | Nao         | Descricao das atividades exercidas     |
+| dataInicio  | String | Nao         | Data de inicio (ex: `2022-01`)         |
+| dataFim     | String | Nao         | Data de termino (ex: `2024-01`)        |
+
+### Response
+
+#### Sucesso
+
+Status: `200 OK`
+
+```json
+[
+  {
+    "id": 2,
+    "cargo": "Desenvolvedor Backend",
+    "empresa": "Empresa XYZ",
+    "descricao": "Desenvolvimento de APIs REST com Java e Spring Boot.",
+    "dataInicio": "2022-01",
+    "dataFim": "2024-01"
+  }
+]
+```
+
+#### Erros
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+## Regras de Negocio
+
+- O ID do usuario e extraido diretamente do JWT.
+- O PUT deleta todas as experiencias existentes do usuario antes de salvar as novas.
+- Uma lista vazia no body resultara na remocao de todas as experiencias.
+
+## Fluxo Resumido (PUT)
+
+1. Extrai o `userId` do JWT no header `Authorization`.
+2. Deleta todas as experiencias existentes do usuario.
+3. Persiste as novas experiencias.
+4. Retorna a lista atualizada com `200 OK`.

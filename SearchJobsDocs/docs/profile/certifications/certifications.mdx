@@ -1,0 +1,138 @@
+---
+id: profile-certifications
+title: Certifications
+---
+
+## Descricao
+
+Endpoints para consultar e atualizar as certificacoes do usuario autenticado. A operacao de atualizacao substitui completamente a lista existente.
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+---
+
+## GET /api/profile/certifications
+
+Retorna todas as certificacoes do usuario autenticado.
+
+### Request
+
+#### Metodo e URL
+
+`GET /api/profile/certifications`
+
+#### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+
+#### Query Params
+
+Nenhum.
+
+#### Body
+
+Nenhum.
+
+### Response
+
+#### Sucesso
+
+Status: `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "nomeCertificacao": "AWS Certified Developer",
+    "instituicao": "Amazon Web Services",
+    "dataObtencao": "2023-06"
+  }
+]
+```
+
+#### Erros
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+---
+
+## PUT /api/profile/certifications
+
+Substitui completamente as certificacoes do usuario autenticado pela lista fornecida.
+
+### Request
+
+#### Metodo e URL
+
+`PUT /api/profile/certifications`
+
+#### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+| Content-Type  | `application/json`      |
+
+#### Body
+
+```json
+{
+  "certificacoes": [
+    {
+      "nomeCertificacao": "AWS Certified Developer",
+      "instituicao": "Amazon Web Services",
+      "dataObtencao": "2023-06"
+    }
+  ]
+}
+```
+
+| Campo            | Tipo   | Obrigatorio | Descricao                              |
+|------------------|--------|-------------|----------------------------------------|
+| nomeCertificacao | String | Nao         | Nome da certificacao                   |
+| instituicao      | String | Nao         | Instituicao emissora                   |
+| dataObtencao     | String | Nao         | Data de obtencao (ex: `2023-06`)       |
+
+### Response
+
+#### Sucesso
+
+Status: `200 OK`
+
+```json
+[
+  {
+    "id": 2,
+    "nomeCertificacao": "AWS Certified Developer",
+    "instituicao": "Amazon Web Services",
+    "dataObtencao": "2023-06"
+  }
+]
+```
+
+#### Erros
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+## Regras de Negocio
+
+- O ID do usuario e extraido diretamente do JWT.
+- O PUT deleta todas as certificacoes existentes do usuario antes de salvar as novas.
+- Uma lista vazia no body resultara na remocao de todas as certificacoes.
+
+## Fluxo Resumido (PUT)
+
+1. Extrai o `userId` do JWT no header `Authorization`.
+2. Deleta todas as certificacoes existentes do usuario.
+3. Persiste as novas certificacoes.
+4. Retorna a lista atualizada com `200 OK`.

@@ -1,0 +1,158 @@
+---
+id: profile-skills
+title: Skills
+---
+
+## Descricao
+
+Endpoints para consultar e atualizar as habilidades tecnicas do usuario autenticado. A operacao de atualizacao substitui completamente a lista de skills existente.
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+---
+
+## GET /api/profile/skills
+
+Retorna todas as skills cadastradas para o usuario autenticado.
+
+### Request
+
+#### Metodo e URL
+
+`GET /api/profile/skills`
+
+#### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+
+#### Query Params
+
+Nenhum.
+
+#### Body
+
+Nenhum.
+
+### Response
+
+#### Sucesso
+
+Status: `200 OK`
+
+```json
+[
+  {
+    "id": 1,
+    "nomeSkill": "Java",
+    "nivel": "AVANCADO"
+  },
+  {
+    "id": 2,
+    "nomeSkill": "Spring Boot",
+    "nivel": "AVANCADO"
+  }
+]
+```
+
+#### Erros
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+---
+
+## PUT /api/profile/skills
+
+Substitui completamente as skills do usuario autenticado pela lista fornecida.
+
+### Request
+
+#### Metodo e URL
+
+`PUT /api/profile/skills`
+
+#### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+| Content-Type  | `application/json`      |
+
+#### Body
+
+```json
+{
+  "skills": ["Java", "Spring Boot", "Docker"]
+}
+```
+
+| Campo  | Tipo          | Obrigatorio | Descricao                                 |
+|--------|---------------|-------------|-------------------------------------------|
+| skills | List\<String\> | Sim         | Lista de nomes de skills (nao pode ser vazia) |
+
+### Response
+
+#### Sucesso
+
+Status: `200 OK`
+
+```json
+[
+  {
+    "id": 3,
+    "nomeSkill": "Java",
+    "nivel": null
+  },
+  {
+    "id": 4,
+    "nomeSkill": "Spring Boot",
+    "nivel": null
+  },
+  {
+    "id": 5,
+    "nomeSkill": "Docker",
+    "nivel": null
+  }
+]
+```
+
+#### Erros
+
+`400 Bad Request`
+
+Retornado quando a lista de skills esta vazia.
+
+```json
+{
+  "status": 400,
+  "erro": "Bad Request",
+  "mensagem": "A lista de skills nao pode ser vazia",
+  "path": "/api/profile/skills",
+  "timestamp": "2024-01-15T10:30:00"
+}
+```
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+## Regras de Negocio
+
+- O ID do usuario e extraido diretamente do JWT.
+- O PUT deleta todas as skills existentes do usuario antes de salvar as novas.
+- A lista `skills` nao pode ser vazia (`@NotEmpty`).
+
+## Fluxo Resumido (PUT)
+
+1. Extrai o `userId` do JWT no header `Authorization`.
+2. Valida que a lista nao esta vazia.
+3. Deleta todas as skills existentes do usuario.
+4. Persiste as novas skills.
+5. Retorna a lista atualizada com `200 OK`.

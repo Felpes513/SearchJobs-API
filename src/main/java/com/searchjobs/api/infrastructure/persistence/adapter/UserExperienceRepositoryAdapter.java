@@ -36,4 +36,20 @@ public class UserExperienceRepositoryAdapter implements UserExperienceRepository
     public void deleteByUserId(Long userId) {
         jpaRepository.deleteByUserId(userId);
     }
+
+    @Override
+    public List<UserExperience> findAllByUserId(Long userId) {
+        return jpaRepository.findAllByUserId(userId)
+                .stream()
+                .map(e -> UserExperience.builder()
+                        .id(e.getId())
+                        .userId(e.getUserId())
+                        .cargo(e.getCargo())
+                        .empresa(e.getEmpresa())
+                        .descricao(e.getDescricao())
+                        .dataInicio(e.getDataInicio())
+                        .dataFim(e.getDataFim())
+                        .build())
+                .toList();
+    }
 }

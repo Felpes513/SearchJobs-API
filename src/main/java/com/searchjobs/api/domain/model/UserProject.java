@@ -7,6 +7,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserProject {
+    private Long id;
     private Long userId;
     private String nome;
     private String descricao;

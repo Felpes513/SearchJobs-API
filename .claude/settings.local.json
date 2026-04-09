@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p D:/Projetos/Intellij/api/SearchJobsDocs/docs/profile/perfil)",
+      "Bash(mkdir -p D:/Projetos/Intellij/api/SearchJobsDocs/docs/profile/skills)",
+      "Bash(mkdir -p D:/Projetos/Intellij/api/SearchJobsDocs/docs/profile/experiences)",
+      "Bash(mkdir -p D:/Projetos/Intellij/api/SearchJobsDocs/docs/profile/certifications)",
+      "Bash(mkdir -p D:/Projetos/Intellij/api/SearchJobsDocs/docs/profile/projects)"
+    ]
+  }
+}

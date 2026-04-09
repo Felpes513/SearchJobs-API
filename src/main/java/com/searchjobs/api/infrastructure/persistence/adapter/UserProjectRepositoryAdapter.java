@@ -35,4 +35,19 @@ public class UserProjectRepositoryAdapter implements UserProjectRepository {
     public void deleteByUserId(Long userId) {
         jpaRepository.deleteByUserId(userId);
     }
+
+    @Override
+    public List<UserProject> findAllByUserId(Long userId) {
+        return jpaRepository.findAllByUserId(userId)
+                .stream()
+                .map(p -> UserProject.builder()
+                        .id(p.getId())
+                        .userId(p.getUserId())
+                        .nome(p.getNome())
+                        .descricao(p.getDescricao())
+                        .stack(p.getStack())
+                        .link(p.getLink())
+                        .build())
+                .toList();
+    }
 }

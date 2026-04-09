@@ -6,10 +6,9 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserCertification {
+public class UserSkill {
     private Long id;
     private Long userId;
-    private String nomeCertificacao;
-    private String instituicao;
-    private String dataObtencao;
+    private String nomeSkill;
+    private String nivel;
 }
