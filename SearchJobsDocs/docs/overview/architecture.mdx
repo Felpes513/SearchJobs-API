@@ -12,25 +12,28 @@ Esta API segue arquitetura hexagonal, com responsabilidades distribuidas entre c
 ```
 src/main/java/com/searchjobs/api/
 ├── application/
-│   ├── dto/request/          # Contratos de entrada (LoginRequest, RegisterRequest)
-│   ├── dto/response/         # Contratos de saida (AuthResponse, ResumeResponse, ...)
-│   └── service/              # Casos de uso aplicacionais (AuthService, ResumeService, ...)
+│   ├── dto/
+│   │   ├── internal/         # DTOs internos (JSearchResponseDto)
+│   │   ├── request/          # Contratos de entrada (LoginRequest, UpdateProfileRequest, ...)
+│   │   └── response/         # Contratos de saida (AuthResponse, UserProfileResponse, JobResponse, ...)
+│   └── service/              # Casos de uso aplicacionais (AuthService, UserProfileService, JobSearchService, ...)
 ├── config/                   # Configuracoes (SecurityConfig, SwaggerConfig, CorsConfig)
 ├── domain/
-│   ├── exception/            # Excecoes de dominio (EmailAlreadyExistsException, ...)
-│   ├── model/                # Entidades de dominio (User, Resume)
+│   ├── exception/            # Excecoes de dominio (EmailAlreadyExistsException, ResumeNotFoundException, ...)
+│   ├── model/                # Entidades de dominio (User, Resume, UserProfile, Job, UserSkill, ...)
 │   └── port/
-│       ├── in/               # Contratos de entrada dos casos de uso (AuthUseCase, ...)
-│       └── out/              # Contratos de saida para persistencia e IA (UserRepository, ...)
+│       ├── in/               # Contratos de entrada dos casos de uso (AuthUseCase, UserProfileUseCase, JobSearchUseCase, ...)
+│       └── out/              # Contratos de saida para persistencia e IA (UserRepository, JobRepository, JobSearchPort, ...)
 └── infrastructure/
     ├── ai/                   # Integracao com OpenAI (OpenAiExtractionAdapter)
+    ├── external/             # Integracao com APIs externas (JSearchAdapter)
     ├── persistence/
-    │   ├── adapter/          # Implementacao dos ports de persistencia
-    │   ├── entity/           # Entidades JPA (UserJpaEntity, ResumeJpaEntity)
+    │   ├── adapter/          # Implementacao dos ports de persistencia (UserProfileRepositoryAdapter, JobRepositoryAdapter, ...)
+    │   ├── entity/           # Entidades JPA (UserJpaEntity, ResumeJpaEntity, UserProfileJpaEntity, JobJpaEntity, ...)
     │   └── repository/       # Spring Data JPA Repositories
     ├── security/             # JWT, filtro e integracao com Spring Security
     └── web/
-        ├── controller/       # Controllers HTTP (AuthController, ResumeController)
+        ├── controller/       # Controllers HTTP (AuthController, ResumeController, ProfileController, JobController)
         └── handler/          # Tratamento global de excecoes (GlobalExceptionHandler)
 ```
 
@@ -65,6 +68,37 @@ src/main/java/com/searchjobs/api/
 | extractedText | String          | Texto bruto extraido do PDF via PDFBox       |
 | parsedJson    | String          | JSON estruturado gerado pela IA (JSONB)      |
 | createdAt     | LocalDateTime   | Data de upload (auto-preenchida)             |
+
+### UserProfile
+
+| Campo               | Tipo            | Descricao                                    |
+|---------------------|-----------------|----------------------------------------------|
+| id                  | Long            | Identificador unico                          |
+| userId              | Long            | ID do usuario dono do perfil (unico)         |
+| resumoProfissional  | String          | Resumo/bio profissional (text)               |
+| cargoDesejado       | String          | Cargo profissional desejado                  |
+| cidade              | String          | Cidade de residencia                         |
+| estado              | String          | UF (ex: SP, RJ)                              |
+| linkedinUrl         | String          | URL do perfil no LinkedIn                    |
+| githubUrl           | String          | URL do perfil no GitHub                      |
+| updatedAt           | LocalDateTime   | Data da ultima atualizacao (auto-preenchida) |
+
+### Job
+
+| Campo          | Tipo            | Descricao                                         |
+|----------------|-----------------|---------------------------------------------------|
+| id             | Long            | Identificador interno                             |
+| externalId     | String          | ID da vaga na API externa (JSearch)               |
+| titulo         | String          | Titulo da vaga                                    |
+| empresa        | String          | Nome da empresa                                   |
+| localizacao    | String          | Localizacao da vaga                               |
+| modeloTrabalho | String          | Modalidade: `REMOTO` ou `PRESENCIAL`              |
+| senioridade    | String          | Nivel de senioridade (`NAO_INFORMADO` por padrao) |
+| descricao      | String          | Descricao completa da vaga                        |
+| salario        | String          | Faixa salarial (quando disponivel)                |
+| jobUrl         | String          | Link para candidatura                             |
+| dataPublicacao | LocalDateTime   | Data de publicacao da vaga                        |
+| createdAt      | LocalDateTime   | Data de importacao (auto-preenchida)              |
 
 ## Tratamento de Erros
 
@@ -101,7 +135,9 @@ O campo `campos` so aparece em erros de validacao (`422`).
 
 ## Integracao com IA
 
-O servico `ResumeExtractionService` extrai texto do PDF usando Apache PDFBox e envia ao modelo GPT via `OpenAiExtractionAdapter`. O retorno e um JSON estruturado com os campos:
+O `OpenAiExtractionAdapter` e utilizado em dois contextos:
+
+**Extracao de curriculo:** O servico `ResumeExtractionService` extrai texto do PDF usando Apache PDFBox e envia ao modelo GPT. O retorno e um JSON estruturado com os campos:
 
 ```json
 {
@@ -114,6 +150,24 @@ O servico `ResumeExtractionService` extrai texto do PDF usando Apache PDFBox e e
   "projetos": []
 }
 ```
+
+**Rankeamento de vagas:** O servico `JobSearchService` utiliza o mesmo adaptador para ordenar as vagas retornadas pelo JSearch de acordo com a aderencia ao perfil do candidato. O modelo recebe as skills do usuario e as descricoes das vagas e retorna os IDs ordenados por relevancia.
+
+## Integracao com JSearch
+
+O `JSearchAdapter` implementa o port `JobSearchPort` e consome a API JSearch via RapidAPI. A busca e feita com base no `cargoDesejado` do perfil do usuario. Os parametros enviados sao:
+
+| Parametro    | Valor                        |
+|--------------|------------------------------|
+| query        | Cargo desejado do usuario    |
+| page         | 1                            |
+| num_pages    | 1                            |
+| country      | br                           |
+| language     | pt                           |
+| location     | Brasil                       |
+| date_posted  | all                          |
+
+As vagas retornadas sao persistidas na tabela `jobs` (upsert por `external_id`) e entao rankeadas pela IA antes de serem retornadas ao cliente.
 
 ## Observacoes
 

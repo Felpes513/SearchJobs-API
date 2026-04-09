@@ -30,8 +30,8 @@ public class JobRepositoryAdapter implements JobRepository {
         entity.setTitulo(job.getTitulo());
         entity.setEmpresa(job.getEmpresa());
         entity.setLocalizacao(job.getLocalizacao());
-        entity.setModeloTrabalho(job.getModeloTrabalho());
-        entity.setSenioridade(job.getSenioridade());
+        entity.setModeloTrabalho(job.getModeloTrabalho() != null ? job.getModeloTrabalho() : "NAO_INFORMADO");
+        entity.setSenioridade(job.getSenioridade() != null ? job.getSenioridade() : "NAO_INFORMADO");
         entity.setDescricao(job.getDescricao());
         entity.setSalario(job.getSalario());
         entity.setJobUrl(job.getJobUrl());

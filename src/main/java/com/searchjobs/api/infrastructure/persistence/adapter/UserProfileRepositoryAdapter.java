@@ -30,6 +30,7 @@ public class UserProfileRepositoryAdapter implements UserProfileRepository {
 
         entity.setUserId(profile.getUserId());
         entity.setResumoProfissional(profile.getResumoProfissional());
+        entity.setCargoDesejado(profile.getCargoDesejado());
         entity.setCidade(profile.getCidade());
         entity.setEstado(profile.getEstado());
         entity.setLinkedinUrl(profile.getLinkedinUrl());
@@ -54,6 +55,7 @@ public class UserProfileRepositoryAdapter implements UserProfileRepository {
                 .id(entity.getId())
                 .userId(entity.getUserId())
                 .resumoProfissional(entity.getResumoProfissional())
+                .cargoDesejado(entity.getCargoDesejado())
                 .cidade(entity.getCidade())
                 .estado(entity.getEstado())
                 .linkedinUrl(entity.getLinkedinUrl())

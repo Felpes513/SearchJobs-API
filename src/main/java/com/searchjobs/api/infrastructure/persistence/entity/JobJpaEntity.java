@@ -33,11 +33,11 @@ public class JobJpaEntity {
     @Column(name = "localizacao", length = 150)
     private String localizacao;
 
-    @Column(name = "modelo_trabalho", length = 20)
-    private String modeloTrabalho;
+    @Column(name = "modelo_trabalho", length = 20, nullable = false)
+    private String modeloTrabalho = "NAO_INFORMADO";
 
-    @Column(name = "senioridade", length = 20)
-    private String senioridade;
+    @Column(name = "senioridade", length = 20, nullable = false)
+    private String senioridade = "NAO_INFORMADO";
 
     @Column(name = "descricao", columnDefinition = "text")
     private String descricao;

@@ -32,12 +32,16 @@ public class JSearchAdapter implements JobSearchPort {
 
     @Override
     public List<Job> search(String query) {
+        System.out.println("Query enviada ao JSearch " + query);
         JSearchResponseDto response = restClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/search")
                         .queryParam("query", query)
                         .queryParam("page", "1")
                         .queryParam("num_pages", "1")
+                        .queryParam("country", "br")
+                        .queryParam("language", "pt")
+                        .queryParam("location", "Brasil")
                         .queryParam("date_posted", "all")
                         .build())
                 .header("x-rapidapi-key", apiKey)
@@ -45,6 +49,9 @@ public class JSearchAdapter implements JobSearchPort {
                 .header("Content-Type", "application/json")
                 .retrieve()
                 .body(JSearchResponseDto.class);
+
+        System.out.println(">>> Total de vagas retornadas: " +
+                (response != null && response.getData() != null ? response.getData().size() : 0));
 
         if (response == null || response.getData() == null) {
             return Collections.emptyList();

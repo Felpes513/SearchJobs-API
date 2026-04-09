@@ -1,7 +1,10 @@
 package com.searchjobs.api.application.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.searchjobs.api.application.dto.response.JobResponse;
 import com.searchjobs.api.domain.model.Job;
+import com.searchjobs.api.domain.model.UserProfile;
 import com.searchjobs.api.domain.model.UserSkill;
 import com.searchjobs.api.domain.port.in.JobSearchUseCase;
 import com.searchjobs.api.domain.port.out.AiExtractionPort;
@@ -12,6 +15,7 @@ import com.searchjobs.api.domain.port.out.UserSkillRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -20,48 +24,106 @@ public class JobSearchService implements JobSearchUseCase {
 
     private final JobSearchPort jobSearchPort;
     private final JobRepository jobRepository;
-    private final UserProfileRepository userProfileRepository;
     private final UserSkillRepository userSkillRepository;
+    private final UserProfileRepository userProfileRepository;
     private final AiExtractionPort aiExtractionPort;
+    private final ObjectMapper objectMapper;
 
     @Override
     public List<JobResponse> searchJobsForUser(Long userId) {
+        String cargoDesejado = userProfileRepository.findByUserId(userId)
+                .map(UserProfile::getCargoDesejado)
+                .orElse(null);
+
+        if (cargoDesejado == null || cargoDesejado.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Configure seu cargo desejado no perfil antes de buscar vagas"
+            );
+        }
+
         List<String> skills = userSkillRepository.findAllByUserId(userId)
                 .stream()
                 .map(UserSkill::getNomeSkill)
                 .toList();
 
-        String query = buildQuery(userId, skills);
+        String query = buildQuery(cargoDesejado, skills);
+        System.out.println(">>> Query enviada ao JSearch: " + query);
+
         List<Job> jobs = jobSearchPort.search(query);
+        System.out.println(">>> Total de vagas retornadas: " + jobs.size());
+
+        if (jobs.isEmpty()) return Collections.emptyList();
 
         jobs.forEach(jobRepository::save);
 
-        return jobs.stream().map(this::toResponse).toList();
+        List<JobResponse> rankedJobs = rankJobsBySkills(jobs, skills);
+        return rankedJobs;
     }
 
-    private String buildQuery(Long userId, List<String> skills) {
-        String skillsText = skills.isEmpty()
-                ? "desenvolvedor software"
-                : String.join(", ", skills.subList(0, Math.min(skills.size(), 5)));
+    private String buildQuery(String cargoDesejado, List<String> skills) {
+        if (cargoDesejado != null && !cargoDesejado.isBlank()) {
+            return cargoDesejado;
+        }
+        if (!skills.isEmpty()) {
+            return skills.get(0);
+        }
+        return "Desenvolvedor Software";
+    }
+
+    private List<JobResponse> rankJobsBySkills(List<Job> jobs, List<String> skills) {
+        if (skills.isEmpty()) {
+            return jobs.stream().map(this::toResponse).toList();
+        }
+
+        String skillsText = String.join(", ", skills);
+        String jobsText = jobs.stream()
+                .map(j -> "ID: %s | Título: %s | Empresa: %s | Descrição: %s"
+                        .formatted(j.getExternalId(), j.getTitulo(), j.getEmpresa(),
+                                j.getDescricao() != null
+                                        ? j.getDescricao().substring(0, Math.min(j.getDescricao().length(), 300))
+                                        : ""))
+                .reduce("", (a, b) -> a + "\n" + b);
 
         String prompt = """
-            Com base nas seguintes skills de um desenvolvedor: %s
-            Gere UMA query de busca de vagas em português para o Brasil.
-            A query deve ser curta, objetiva, com no máximo 6 palavras.
-            Retorne APENAS a query, sem explicações, sem aspas, sem pontuação.
-            Exemplo: Desenvolvedor Java Spring Boot Brasil
-            """.formatted(skillsText);
+                Você é um assistente de recrutamento. Dado um candidato com as seguintes skills:
+                %s
+                
+                E as seguintes vagas disponíveis:
+                %s
+                
+                Retorne APENAS um array JSON com os IDs das vagas ordenados do mais relevante para o menos relevante para este candidato.
+                Exemplo: ["id1", "id2", "id3"]
+                Retorne apenas o array, sem explicações, sem markdown.
+                """.formatted(skillsText, jobsText);
 
-        String query = aiExtractionPort.extractResumeData(prompt);
+        try {
+            String response = aiExtractionPort.extractResumeData(prompt).trim()
+                    .replaceAll("```json", "")
+                    .replaceAll("```", "")
+                    .trim();
 
-        return query
-                .trim()
-                .replaceAll("\"", "")
-                .replaceAll("\n", " ")
-                .replaceAll("\r", "")
-                .replaceAll("\\{", "")
-                .replaceAll("\\}", "")
-                .trim();
+            List<String> rankedIds = objectMapper.readValue(response, new TypeReference<>() {});
+
+            List<Job> ranked = rankedIds.stream()
+                    .map(id -> jobs.stream()
+                            .filter(j -> id.equals(j.getExternalId()))
+                            .findFirst()
+                            .orElse(null))
+                    .filter(j -> j != null)
+                    .toList();
+
+            List<Job> notRanked = jobs.stream()
+                    .filter(j -> !rankedIds.contains(j.getExternalId()))
+                    .toList();
+
+            return java.util.stream.Stream.concat(ranked.stream(), notRanked.stream())
+                    .map(this::toResponse)
+                    .toList();
+
+        } catch (Exception e) {
+            System.out.println(">>> Erro ao rankear vagas: " + e.getMessage());
+            return jobs.stream().map(this::toResponse).toList();
+        }
     }
 
     private JobResponse toResponse(Job job) {

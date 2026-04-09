@@ -41,44 +41,51 @@ public class OpenAiExtractionAdapter implements AiExtractionPort {
 
     private String buildPrompt(String resumeText) {
         return """
-                Você é um extrator de informações de currículos. Analise o texto abaixo e retorne APENAS um JSON válido, sem markdown, sem explicações, somente o JSON.
-                
-                O JSON deve ter exatamente esta estrutura:
+            Você é um extrator de informações de currículos. Analise o texto abaixo e retorne APENAS um JSON válido, sem markdown, sem explicações, somente o JSON.
+            
+            O JSON deve ter exatamente esta estrutura:
+            {
+              "nome": "string",
+              "email": "string",
+              "telefone": "string",
+              "skills": ["string"],
+              "experiencias": [
+                {
+                  "cargo": "string",
+                  "empresa": "string",
+                  "descricao": "string",
+                  "dataInicio": "string",
+                  "dataFim": "string"
+                }
+              ],
+              "certificacoes": [
                 {
                   "nome": "string",
-                  "email": "string",
-                  "telefone": "string",
-                  "skills": ["string"],
-                  "experiencias": [
-                    {
-                      "cargo": "string",
-                      "empresa": "string",
-                      "descricao": "string",
-                      "dataInicio": "string",
-                      "dataFim": "string"
-                    }
-                  ],
-                  "certificacoes": [
-                    {
-                      "nome": "string",
-                      "instituicao": "string",
-                      "dataObtencao": "string"
-                    }
-                  ],
-                  "projetos": [
-                    {
-                      "nome": "string",
-                      "descricao": "string",
-                      "stack": "string",
-                      "link": "string"
-                    }
-                  ]
+                  "instituicao": "string",
+                  "dataObtencao": "string"
                 }
-                
-                Se alguma informação não estiver presente, use null para strings e [] para arrays.
-                
-                Texto do currículo:
-                %s
-                """.formatted(resumeText);
+              ],
+              "projetos": [
+                {
+                  "nome": "string",
+                  "descricao": "string",
+                  "stack": "string",
+                  "link": "string"
+                }
+              ]
+            }
+            
+            REGRAS IMPORTANTES para o campo "skills":
+            - Extraia APENAS tecnologias, linguagens, frameworks e ferramentas específicas
+            - Exemplos corretos: "Java", "Spring Boot", "Angular", "PostgreSQL", "Docker", "Cypress", "Git"
+            - Exemplos INCORRETOS: "Desenvolvimento Full Stack", "Inteligencia Artificial", "Qualidade de Software"
+            - Cada skill deve ter no máximo 3 palavras
+            - Não inclua áreas genéricas, apenas tecnologias concretas
+            
+            Se alguma informação não estiver presente, use null para strings e [] para arrays.
+            
+            Texto do currículo:
+            %s
+            """.formatted(resumeText);
     }
 }

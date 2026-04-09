@@ -8,6 +8,7 @@ import lombok.Getter;
 public class UserProfileResponse {
     private Long id;
     private String resumoProfissional;
+    private String cargoDesejado;
     private String cidade;
     private String estado;
     private String linkedinUrl;
