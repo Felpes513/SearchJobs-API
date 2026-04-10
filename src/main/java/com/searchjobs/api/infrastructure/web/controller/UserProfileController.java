@@ -2,6 +2,7 @@ package com.searchjobs.api.infrastructure.web.controller;
 
 import com.searchjobs.api.application.dto.request.*;
 import com.searchjobs.api.application.dto.response.*;
+import com.searchjobs.api.domain.port.in.GitHubSyncUseCase;
 import com.searchjobs.api.domain.port.in.UserProfileUseCase;
 import com.searchjobs.api.infrastructure.security.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +20,7 @@ public class UserProfileController {
 
     private final UserProfileUseCase userProfileUseCase;
     private final JwtService jwtService;
+    private final GitHubSyncUseCase gitHubSyncUseCase;
 
     private Long extractUserId(HttpServletRequest request) {
         String token = request.getHeader("Authorization").substring(7);
@@ -83,5 +85,10 @@ public class UserProfileController {
             @RequestBody UpdateProjectsRequest body,
             HttpServletRequest request) {
         return ResponseEntity.ok(userProfileUseCase.updateProjects(extractUserId(request), body));
+    }
+
+    @PostMapping("/github/sync")
+    public ResponseEntity<List<UserProjectResponse>> syncGitHub(HttpServletRequest request) {
+        return ResponseEntity.ok(gitHubSyncUseCase.sync(extractUserId(request)));
     }
 }

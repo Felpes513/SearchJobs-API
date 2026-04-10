@@ -1,0 +1,156 @@
+---
+id: jobs-search
+title: Buscar Vagas com IA
+---
+
+## Descricao
+
+Busca vagas de emprego personalizadas para o usuario autenticado utilizando IA (OpenAI GPT) e a API externa JSearch.
+
+O fluxo combina tres etapas inteligentes:
+1. **Consulta ao JSearch**: busca vagas usando o cargo desejado configurado no perfil do usuario.
+2. **Rankeamento por IA**: o GPT analisa as vagas retornadas e as ordena por relevancia com base nas skills do usuario.
+3. **Persistencia**: as vagas encontradas sao salvas no banco de dados.
+
+:::tip Cache
+Os resultados da busca sao armazenados em cache por **10 minutos** por usuario. Requisicoes subsequentes dentro desse periodo retornam o resultado cacheado sem chamar o JSearch ou o GPT novamente.
+
+O cache e invalidado automaticamente quando o usuario extrai um novo curriculo via `POST /api/resumes/{id}/extract`, garantindo que a proxima busca reflita o perfil atualizado.
+:::
+
+:::info Pre-requisito
+O usuario deve ter o campo **cargo desejado** preenchido no perfil antes de realizar a busca. Veja `PUT /api/profile`.
+:::
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+## Request
+
+### Metodo e URL
+
+`GET /api/jobs/search`
+
+### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+
+### Query Params
+
+Nenhum.
+
+### Body
+
+Nenhum.
+
+## Response
+
+### Sucesso
+
+Status: `200 OK`
+
+Retorna uma lista de vagas ordenadas por relevancia para o usuario (com base nas suas skills).
+
+```json
+[
+  {
+    "id": 1,
+    "externalId": "abc123xyz",
+    "titulo": "Backend Developer - Java",
+    "empresa": "Tech Corp",
+    "localizacao": "Sao Paulo, SP",
+    "modeloTrabalho": "Remote",
+    "senioridade": "Mid-Senior level",
+    "descricao": "Estamos procurando um desenvolvedor Java com experiencia em Spring Boot...",
+    "salario": "R$ 8.000 - R$ 12.000",
+    "jobUrl": "https://www.linkedin.com/jobs/view/abc123",
+    "dataPublicacao": "2025-04-01"
+  },
+  {
+    "id": 2,
+    "externalId": "def456uvw",
+    "titulo": "Java Software Engineer",
+    "empresa": "Startup X",
+    "localizacao": "Remoto",
+    "modeloTrabalho": "Remote",
+    "senioridade": "Senior level",
+    "descricao": "Vaga para engenheiro de software com foco em microservicos...",
+    "salario": null,
+    "jobUrl": "https://www.indeed.com/viewjob?jk=def456",
+    "dataPublicacao": "2025-04-02"
+  }
+]
+```
+
+### Campos da Resposta
+
+| Campo          | Tipo   | Descricao                                          |
+|----------------|--------|----------------------------------------------------|
+| id             | Long   | ID interno da vaga no banco de dados               |
+| externalId     | String | ID da vaga na API externa (JSearch)                |
+| titulo         | String | Titulo da vaga                                     |
+| empresa        | String | Nome da empresa                                    |
+| localizacao    | String | Localizacao da vaga                                |
+| modeloTrabalho | String | Modelo de trabalho (Remote, Hybrid, On-site)       |
+| senioridade    | String | Nivel de senioridade exigido                       |
+| descricao      | String | Descricao completa da vaga                         |
+| salario        | String | Faixa salarial (pode ser null)                     |
+| jobUrl         | String | Link para a vaga original                          |
+| dataPublicacao | String | Data de publicacao da vaga (formato ISO: YYYY-MM-DD)|
+
+### Erros
+
+`400 Bad Request`
+
+Retornado quando o usuario nao tem o campo **cargo desejado** preenchido no perfil.
+
+```json
+{
+  "status": 400,
+  "erro": "Bad Request",
+  "mensagem": "Configure seu cargo desejado no perfil antes de buscar vagas",
+  "path": "/api/jobs/search",
+  "timestamp": "2025-04-09T10:30:00"
+}
+```
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+```json
+{
+  "status": 401,
+  "erro": "Unauthorized",
+  "mensagem": "Token ausente ou invalido",
+  "path": "/api/jobs/search",
+  "timestamp": "2025-04-09T10:30:00"
+}
+```
+
+## Regras de Negocio
+
+- O campo **cargo desejado** do perfil do usuario e usado como query principal para busca no JSearch.
+- As **skills** do usuario sao usadas pelo GPT para rankear as vagas por relevancia.
+- Caso o usuario nao tenha skills cadastradas, as vagas sao retornadas na ordem original do JSearch.
+- Todas as vagas retornadas pela API externa sao persistidas no banco de dados.
+- Em caso de falha no rankeamento por IA, as vagas sao retornadas sem ordenacao especifica.
+- Os resultados sao cacheados por usuario por **10 minutos** (maximo de 100 usuarios em cache simultaneamente).
+- O cache e **invalidado automaticamente** apos extracao de curriculo, garantindo resultados atualizados com o novo perfil.
+
+## Fluxo Resumido
+
+1. Extrai o `userId` do token JWT.
+2. **Verifica o cache**: se houver resultado cacheado para o usuario, retorna imediatamente com `200 OK`.
+3. Busca o `cargoDesejado` no perfil do usuario — lanca erro `400` se nao estiver preenchido.
+4. Busca as skills do usuario no banco de dados.
+5. Envia a query de busca (cargo desejado) para a API JSearch.
+6. Salva as vagas retornadas no banco de dados.
+7. Envia as vagas e as skills ao GPT para rankeamento por relevancia.
+8. Armazena o resultado em cache por 10 minutos.
+9. Retorna a lista de vagas ordenada com `200 OK`.

@@ -24,6 +24,9 @@ public class UserProfileJpaEntity {
     @Column(name = "resumo_profissional", columnDefinition = "text")
     private String resumoProfissional;
 
+    @Column(name = "cargo_desejado", length = 150)
+    private String cargoDesejado;
+
     @Column(name = "cidade", length = 120)
     private String cidade;
 

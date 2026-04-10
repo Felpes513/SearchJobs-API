@@ -128,11 +128,78 @@ Status: `200 OK`
 
 Retornado quando o token JWT esta ausente ou invalido.
 
+---
+
+## POST /api/profile/github/sync
+
+Sincroniza os projetos do usuario autenticado com seus repositorios publicos no GitHub. O GitHub URL deve estar configurado no perfil antes de usar este endpoint.
+
+### Request
+
+#### Metodo e URL
+
+`POST /api/profile/github/sync`
+
+#### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+
+#### Query Params
+
+Nenhum.
+
+#### Body
+
+Nenhum.
+
+### Response
+
+#### Sucesso
+
+Status: `200 OK`
+
+Retorna a lista de projetos sincronizados a partir dos repositorios publicos do GitHub.
+
+```json
+[
+  {
+    "id": 3,
+    "nome": "searchjobs-api",
+    "descricao": "API REST para gerenciamento de vagas e perfis profissionais.",
+    "stack": "Java, Kotlin",
+    "link": "https://github.com/usuario/searchjobs-api"
+  }
+]
+```
+
+#### Erros
+
+| Status | Descricao |
+|--------|-----------|
+| `400 Bad Request` | GitHub URL nao configurado no perfil, ou nenhum repositorio publico encontrado. |
+| `401 Unauthorized` | Token JWT ausente ou invalido. |
+
+Exemplo de erro `400`:
+
+```json
+{
+  "message": "Configure seu GitHub no perfil antes de sincronizar"
+}
+```
+
+---
+
 ## Regras de Negocio
 
 - O ID do usuario e extraido diretamente do JWT.
 - O PUT deleta todos os projetos existentes do usuario antes de salvar os novos.
 - Uma lista vazia no body resultara na remocao de todos os projetos.
+- A sincronizacao com GitHub (POST /github/sync) exige que o campo `githubUrl` esteja preenchido no perfil do usuario.
+- Apenas repositorios publicos e que nao sejam forks sao importados (ate 30, ordenados por ultima atualizacao).
+- A sincronizacao substitui completamente os projetos existentes do usuario.
+- As linguagens de cada repositorio sao buscadas via API do GitHub e salvas no campo `stack`.
 
 ## Fluxo Resumido (PUT)
 
@@ -140,3 +207,15 @@ Retornado quando o token JWT esta ausente ou invalido.
 2. Deleta todos os projetos existentes do usuario.
 3. Persiste os novos projetos.
 4. Retorna a lista atualizada com `200 OK`.
+
+## Fluxo Resumido (POST /github/sync)
+
+1. Extrai o `userId` do JWT no header `Authorization`.
+2. Busca o `githubUrl` do perfil do usuario.
+3. Extrai o username a partir da URL do GitHub.
+4. Consulta a API do GitHub: `GET /users/{username}/repos?per_page=30&sort=updated`.
+5. Filtra repositorios publicos e que nao sejam forks.
+6. Para cada repositorio, consulta as linguagens via `GET /repos/{username}/{repo}/languages`.
+7. Deleta todos os projetos existentes do usuario.
+8. Persiste os projetos importados.
+9. Retorna a lista atualizada com `200 OK`.

@@ -10,10 +10,15 @@ import java.util.List;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ParsedResumeDto {
-
     private String nome;
     private String email;
     private String telefone;
+    private String cidade;
+    private String estado;
+    private String linkedinUrl;
+    private String githubUrl;
+    private String resumoProfissional;
+    private String cargoDesejado;
     private List<String> skills;
     private List<ExperienciaDto> experiencias;
     private List<CertificacaoDto> certificacoes;

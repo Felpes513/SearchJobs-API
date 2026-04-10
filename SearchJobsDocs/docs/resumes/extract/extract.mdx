@@ -5,7 +5,7 @@ title: Extrair Dados do Curriculo
 
 ## Descricao
 
-Extrai e estrutura os dados de um curriculo previamente enviado utilizando IA (OpenAI GPT). O texto do PDF e extraido via Apache PDFBox e enviado ao modelo GPT para geracao de um JSON estruturado com as informacoes do candidato.
+Extrai e estrutura os dados de um curriculo previamente enviado utilizando IA (OpenAI GPT). O texto do PDF e extraido via Apache PDFBox e enviado ao modelo GPT, que retorna um JSON estruturado com as informacoes do candidato. Alem disso, o perfil do usuario e automaticamente populado com os dados extraidos (skills, experiencias, certificacoes e projetos).
 
 ## Autenticacao
 
@@ -48,12 +48,18 @@ Status: `200 OK`
 ```json
 {
   "resumeId": 1,
-  "parsedJson": "{\"nome\":\"Felipe Souza\",\"email\":\"felipe@email.com\",\"telefone\":\"(11) 99999-9999\",\"skills\":[\"Java\",\"Spring Boot\",\"PostgreSQL\"],\"experiencias\":[{\"cargo\":\"Dev Backend\",\"empresa\":\"Empresa X\",\"periodo\":\"2022-2024\"}],\"certificacoes\":[\"AWS Cloud Practitioner\"],\"projetos\":[{\"nome\":\"SearchJobs\",\"descricao\":\"API de busca de vagas\"}]}",
-  "mensagem": "Curriculo extraido com sucesso"
+  "mensagem": "Curriculo extraido e perfil atualizado com sucesso",
+  "camposFaltando": ["telefone"]
 }
 ```
 
-O campo `parsedJson` e uma string JSON com os seguintes campos possiveis:
+| Campo          | Tipo         | Descricao                                                                 |
+|----------------|--------------|---------------------------------------------------------------------------|
+| resumeId       | Long         | ID do curriculo processado                                                |
+| mensagem       | String       | Mensagem de status da extracao                                            |
+| camposFaltando | Array String | Campos que nao foram encontrados no curriculo (ex: nome, email, skills)   |
+
+Os dados extraidos sao salvos diretamente no perfil do usuario. Os campos possiveis extraidos pela IA sao:
 
 | Campo         | Tipo   | Descricao                              |
 |---------------|--------|----------------------------------------|
@@ -118,7 +124,9 @@ Retornado quando o servico OpenAI atinge o limite de requisicoes (rate limit).
 - O curriculo precisa ter sido previamente enviado via `POST /api/resumes/upload`.
 - O texto e extraido do PDF usando Apache PDFBox.
 - O JSON gerado pela IA e persistido no campo `parsedJson` da tabela `resumes` (tipo JSONB no PostgreSQL).
-- Campos nao encontrados no curriculo podem estar ausentes ou nulos no JSON retornado.
+- Campos nao encontrados no curriculo aparecem na lista `camposFaltando` da resposta.
+- Os dados anteriores do perfil (skills, experiencias, certificacoes, projetos) sao limpos antes de salvar os novos dados extraidos.
+- O perfil base do usuario e recriado automaticamente apos a extracao.
 
 ## Fluxo Resumido
 
@@ -126,4 +134,5 @@ Retornado quando o servico OpenAI atinge o limite de requisicoes (rate limit).
 2. Extrai o texto bruto do arquivo PDF via PDFBox.
 3. Envia o texto ao modelo GPT via OpenAI API.
 4. Persiste o texto extraido e o JSON estruturado no banco.
-5. Retorna o resultado com `200 OK`.
+5. Popula automaticamente o perfil do usuario com os dados extraidos (skills, experiencias, certificacoes, projetos).
+6. Retorna o resultado com os campos faltantes (se houver) e `200 OK`.

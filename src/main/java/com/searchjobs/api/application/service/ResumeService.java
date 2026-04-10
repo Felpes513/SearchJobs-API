@@ -1,5 +1,8 @@
 package com.searchjobs.api.application.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.searchjobs.api.application.dto.internal.ParsedResumeDto;
+import com.searchjobs.api.application.dto.response.ResumeListResponse;
 import com.searchjobs.api.application.dto.response.ResumeResponse;
 import com.searchjobs.api.domain.exception.InvalidFileException;
 import com.searchjobs.api.domain.exception.ResumeNotFoundException;
@@ -19,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -26,6 +30,7 @@ import java.util.UUID;
 public class ResumeService implements ResumeUseCase {
 
     private final ResumeRepository resumeRepository;
+    private final ObjectMapper objectMapper;
 
     @Value("${storage.resumes-dir}")
     private String resumesDir;
@@ -45,19 +50,33 @@ public class ResumeService implements ResumeUseCase {
             throw new RuntimeException("Erro ao salvar o arquivo: " + e.getMessage());
         }
 
-        Resume resume = Resume.builder()
-                .userId(userId)
-                .fileName(originalName)
-                .filePath(targetPath.toString())
-                .build();
+        // Verifica se já existe um currículo para esse usuário
+        Optional<Resume> existing = resumeRepository.findByUserId(userId);
 
-        Resume saved = resumeRepository.save(resume);
+        Resume resume;
+        if (existing.isPresent()) {
+            // Atualiza o existente
+            resume = Resume.builder()
+                    .id(existing.get().getId())
+                    .userId(userId)
+                    .fileName(originalName)
+                    .filePath(targetPath.toString())
+                    .build();
+            resume = resumeRepository.update(resume);
+        } else {
+            resume = Resume.builder()
+                    .userId(userId)
+                    .fileName(originalName)
+                    .filePath(targetPath.toString())
+                    .build();
+            resume = resumeRepository.save(resume);
+        }
 
         return ResumeResponse.builder()
-                .id(saved.getId())
-                .fileName(saved.getFileName())
-                .filePath(saved.getFilePath())
-                .createdAt(saved.getCreatedAt())
+                .id(resume.getId())
+                .fileName(resume.getFileName())
+                .filePath(resume.getFilePath())
+                .createdAt(resume.getCreatedAt())
                 .build();
     }
 
@@ -90,26 +109,81 @@ public class ResumeService implements ResumeUseCase {
     }
 
     @Override
-    public List<ResumeResponse> findAllByUser(Long userId) {
-        return resumeRepository.findAllByUserId(userId)
-                .stream()
-                .map(resume -> ResumeResponse.builder()
-                        .id(resume.getId())
-                        .fileName(resume.getFileName())
-                        .filePath(resume.getFilePath())
-                        .createdAt(resume.getCreatedAt())
+    public Page<ResumeListResponse> findAllByUser(Long userId, Pageable pageable) {
+        return resumeRepository.findAllByUserId(userId, pageable)
+                .map(this::toListResponse);
+    }
+
+    private ResumeListResponse toListResponse(Resume resume) {
+        if (resume.getParsedJson() == null) {
+            return ResumeListResponse.builder()
+                    .fileName(resume.getFileName())
+                    .createdAt(resume.getCreatedAt())
+                    .extraido(false)
+                    .build();
+        }
+
+        try {
+            ParsedResumeDto parsed = objectMapper.readValue(resume.getParsedJson(), ParsedResumeDto.class);
+            return ResumeListResponse.builder()
+                    .fileName(resume.getFileName())
+                    .createdAt(resume.getCreatedAt())
+                    .extraido(true)
+                    .nome(parsed.getNome())
+                    .email(parsed.getEmail())
+                    .telefone(parsed.getTelefone())
+                    .cidade(parsed.getCidade())
+                    .estado(parsed.getEstado())
+                    .linkedinUrl(parsed.getLinkedinUrl())
+                    .githubUrl(parsed.getGithubUrl())
+                    .resumoProfissional(parsed.getResumoProfissional())
+                    .skills(parsed.getSkills())
+                    .experiencias(mapExperiencias(parsed.getExperiencias()))
+                    .certificacoes(mapCertificacoes(parsed.getCertificacoes()))
+                    .projetos(mapProjetos(parsed.getProjetos()))
+                    .build();
+        } catch (Exception e) {
+            return ResumeListResponse.builder()
+                    .fileName(resume.getFileName())
+                    .createdAt(resume.getCreatedAt())
+                    .extraido(false)
+                    .build();
+        }
+    }
+
+    private List<ResumeListResponse.ExperienciaResponse> mapExperiencias(List<ParsedResumeDto.ExperienciaDto> list) {
+        if (list == null) return null;
+        return list.stream()
+                .map(e -> ResumeListResponse.ExperienciaResponse.builder()
+                        .cargo(e.getCargo())
+                        .empresa(e.getEmpresa())
+                        .descricao(e.getDescricao())
+                        .dataInicio(e.getDataInicio())
+                        .dataFim(e.getDataFim())
                         .build())
                 .toList();
     }
 
-    @Override
-    public Page<ResumeResponse> findAllByUser(Long userId, Pageable pageable) {
-        return resumeRepository.findAllByUserId(userId, pageable)
-                .map(resume -> ResumeResponse.builder()
-                        .id(resume.getId())
-                        .fileName(resume.getFileName())
-                        .filePath(resume.getFilePath())
-                        .createdAt(resume.getCreatedAt())
-                        .build());
+    private List<ResumeListResponse.CertificacaoResponse> mapCertificacoes(List<ParsedResumeDto.CertificacaoDto> list) {
+        if (list == null) return null;
+        return list.stream()
+                .map(c -> ResumeListResponse.CertificacaoResponse.builder()
+                        .nome(c.getNome())
+                        .instituicao(c.getInstituicao())
+                        .dataObtencao(c.getDataObtencao())
+                        .build())
+                .toList();
+    }
+
+    private List<ResumeListResponse.ProjetoResponse> mapProjetos(List<ParsedResumeDto.ProjetoDto> list) {
+        if (list == null) return null;
+        return list.stream()
+                .map(p -> ResumeListResponse.ProjetoResponse.builder()
+                        .nome(p.getNome())
+                        .descricao(p.getDescricao())
+                        .stack(p.getStack())
+                        .link(p.getLink())
+                        .build())
+                .toList();
     }
 }
