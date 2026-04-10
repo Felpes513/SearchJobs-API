@@ -1,6 +1,7 @@
 package com.searchjobs.api.infrastructure.web.controller;
 
 import com.searchjobs.api.application.dto.response.ResumeExtractionResponse;
+import com.searchjobs.api.application.dto.response.ResumeListResponse;
 import com.searchjobs.api.application.dto.response.ResumeResponse;
 import com.searchjobs.api.domain.port.in.ResumeExtractionUseCase;
 import com.searchjobs.api.domain.port.in.ResumeUseCase;
@@ -117,7 +118,7 @@ public class ResumeController {
                             schema = @Schema(implementation = ErrorResponse.class)))
     })
     @GetMapping
-    public ResponseEntity<Page<ResumeResponse>> findAll(
+    public ResponseEntity<Page<ResumeListResponse>> findAll(
             @Parameter(description = "Número da página (começa em 0)", example = "0")
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Quantidade de itens por página", example = "10")

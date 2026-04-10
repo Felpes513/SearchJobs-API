@@ -1,0 +1,11 @@
+target/
+.git/
+.gitignore
+.env
+.env.example
+.idea/
+*.iml
+*.iws
+*.ipr
+uploads/
+SearchJobsDocs/

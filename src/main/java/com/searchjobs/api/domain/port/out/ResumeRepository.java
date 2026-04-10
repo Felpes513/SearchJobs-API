@@ -14,4 +14,5 @@ public interface ResumeRepository {
     List<Resume> findAllByUserId(Long userId);
     Page<Resume> findAllByUserId(Long userId, Pageable pageable);
     void deleteById(Long id);
+    Optional<Resume> findByUserId(Long userId);
 }

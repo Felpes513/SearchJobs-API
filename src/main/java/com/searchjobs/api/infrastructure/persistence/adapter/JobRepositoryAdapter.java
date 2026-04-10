@@ -66,4 +66,9 @@ public class JobRepositoryAdapter implements JobRepository {
                 .createdAt(entity.getCreatedAt())
                 .build();
     }
+
+    @Override
+    public Optional<Job> findById(Long id) {
+        return jpaRepository.findById(id).map(this::toDomain);
+    }
 }

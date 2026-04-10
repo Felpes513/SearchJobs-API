@@ -48,6 +48,12 @@ public class OpenAiExtractionAdapter implements AiExtractionPort {
               "nome": "string",
               "email": "string",
               "telefone": "string",
+              "cidade": "string",
+              "estado": "string",
+              "linkedinUrl": "string",
+              "githubUrl": "string",
+              "resumoProfissional": "string",
+              "cargoDesejado": "string",
               "skills": ["string"],
               "experiencias": [
                 {
@@ -75,14 +81,17 @@ public class OpenAiExtractionAdapter implements AiExtractionPort {
               ]
             }
             
-            REGRAS IMPORTANTES para o campo "skills":
-            - Extraia APENAS tecnologias, linguagens, frameworks e ferramentas específicas
-            - Exemplos corretos: "Java", "Spring Boot", "Angular", "PostgreSQL", "Docker", "Cypress", "Git"
-            - Exemplos INCORRETOS: "Desenvolvimento Full Stack", "Inteligencia Artificial", "Qualidade de Software"
-            - Cada skill deve ter no máximo 3 palavras
-            - Não inclua áreas genéricas, apenas tecnologias concretas
-            
-            Se alguma informação não estiver presente, use null para strings e [] para arrays.
+            REGRAS IMPORTANTES:
+            - "resumoProfissional": extraia o objetivo ou resumo profissional do candidato
+            - "cidade" e "estado": extraia do endereço presente no currículo
+            - "linkedinUrl": extraia a URL completa do LinkedIn se presente
+            - "githubUrl": extraia o usuário ou URL do GitHub se presente
+            - "skills": extraia APENAS tecnologias, linguagens, frameworks e ferramentas específicas. Exemplos corretos: "Java", "Spring Boot", "Angular", "MySQL", "Docker", "Cypress". Exemplos INCORRETOS: "Desenvolvimento Full Stack", "Qualidade de Software"
+            - "certificacoes": inclua também formações acadêmicas como certificações, com instituição e data de conclusão
+            - "experiencias" - datas: converta para formato YYYY-MM se possível, caso contrário mantenha o texto original
+            - Para campos não encontrados use null para strings e [] para arrays
+            - "cargoDesejado": extraia o cargo ou objetivo profissional do candidato. Exemplos: "Desenvolvedor Java Junior", "Analista de Testes", "Desenvolvedor Full Stack". Deve ser curto, no máximo 5 palavras.
+            - "resumoProfissional": extraia o texto completo do objetivo ou resumo profissional
             
             Texto do currículo:
             %s

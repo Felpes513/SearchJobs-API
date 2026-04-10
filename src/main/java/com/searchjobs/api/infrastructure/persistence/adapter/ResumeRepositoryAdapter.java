@@ -37,6 +37,7 @@ public class ResumeRepositoryAdapter implements ResumeRepository {
                 .fileName(entity.getFileName())
                 .filePath(entity.getFilePath())
                 .extractedText(entity.getExtractedText())
+                .parsedJson(entity.getParsedJson())
                 .createdAt(entity.getCreatedAt())
                 .build();
     }
@@ -51,6 +52,8 @@ public class ResumeRepositoryAdapter implements ResumeRepository {
         ResumeJpaEntity entity = jpaRepository.findById(resume.getId())
                 .orElseThrow(() -> new RuntimeException("Currículo não encontrado"));
 
+        entity.setFileName(resume.getFileName());
+        entity.setFilePath(resume.getFilePath());
         entity.setExtractedText(resume.getExtractedText());
         entity.setParsedJson(resume.getParsedJson());
 
@@ -73,5 +76,10 @@ public class ResumeRepositoryAdapter implements ResumeRepository {
     @Override
     public void deleteById(Long id) {
         jpaRepository.deleteById(id);
+    }
+
+    @Override
+    public Optional<Resume> findByUserId(Long userId) {
+        return jpaRepository.findByUserId(userId).map(this::toDomain);
     }
 }

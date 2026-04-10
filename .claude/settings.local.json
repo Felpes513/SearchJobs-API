@@ -8,7 +8,11 @@
       "Bash(mkdir -p D:/Projetos/Intellij/api/SearchJobsDocs/docs/profile/projects)",
       "Read(//d/Projetos/**)",
       "Bash(cat SearchJobsDocs/docs/resumes/extract/*.mdx)",
-      "Bash(cat SearchJobsDocs/docs/resumes/extract/*.md)"
+      "Bash(cat SearchJobsDocs/docs/resumes/extract/*.md)",
+      "Bash(xargs grep:*)",
+      "Bash(./mvnw compile:*)",
+      "Bash(mkdir -p \"D:/Projetos/Intellij/api/SearchJobsDocs/docs/jobs/match-all\")",
+      "Bash(mkdir -p \"D:/Projetos/Intellij/api/SearchJobsDocs/docs/jobs/matches\")"
     ]
   }
 }

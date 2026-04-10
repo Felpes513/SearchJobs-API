@@ -76,6 +76,12 @@ public class ResumeExtractionService implements ResumeExtractionUseCase {
 
         userProfileRepository.save(UserProfile.builder()
                 .userId(userId)
+                .resumoProfissional(parsed.getResumoProfissional())
+                .cargoDesejado(parsed.getCargoDesejado())
+                .cidade(parsed.getCidade())
+                .estado(parsed.getEstado())
+                .linkedinUrl(parsed.getLinkedinUrl())
+                .githubUrl(parsed.getGithubUrl())
                 .build());
 
         if (isBlank(parsed.getNome()))     faltando.add("nome");

@@ -9,4 +9,5 @@ public interface JobRepository {
     Job save(Job job);
     Optional<Job> findByExternalId(String externalId);
     List<Job> findAll();
+    Optional<Job> findById(Long id);
 }
