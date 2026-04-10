@@ -6,7 +6,9 @@
       "Bash(mkdir -p D:/Projetos/Intellij/api/SearchJobsDocs/docs/profile/experiences)",
       "Bash(mkdir -p D:/Projetos/Intellij/api/SearchJobsDocs/docs/profile/certifications)",
       "Bash(mkdir -p D:/Projetos/Intellij/api/SearchJobsDocs/docs/profile/projects)",
-      "Read(//d/Projetos/**)"
+      "Read(//d/Projetos/**)",
+      "Bash(cat SearchJobsDocs/docs/resumes/extract/*.mdx)",
+      "Bash(cat SearchJobsDocs/docs/resumes/extract/*.md)"
     ]
   }
 }

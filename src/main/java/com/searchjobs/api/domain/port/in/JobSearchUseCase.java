@@ -6,4 +6,6 @@ import java.util.List;
 
 public interface JobSearchUseCase {
     List<JobResponse> searchJobsForUser(Long userId);
+    void evictJobsCache(Long userId);
+
 }

@@ -5,6 +5,7 @@ import com.searchjobs.api.application.dto.internal.ParsedResumeDto;
 import com.searchjobs.api.application.dto.response.ResumeExtractionResponse;
 import com.searchjobs.api.domain.exception.ResumeNotFoundException;
 import com.searchjobs.api.domain.model.*;
+import com.searchjobs.api.domain.port.in.JobSearchUseCase;
 import com.searchjobs.api.domain.port.in.ResumeExtractionUseCase;
 import com.searchjobs.api.domain.port.out.*;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class ResumeExtractionService implements ResumeExtractionUseCase {
     private final UserExperienceRepository userExperienceRepository;
     private final UserCertificationRepository userCertificationRepository;
     private final UserProjectRepository userProjectRepository;
+    private final JobSearchUseCase jobSearchUseCase;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -54,6 +56,8 @@ public class ResumeExtractionService implements ResumeExtractionUseCase {
         ParsedResumeDto parsed = parseJson(parsedJson);
         List<String> camposFaltando = populateProfile(resume.getUserId(), parsed);
 
+        jobSearchUseCase.evictJobsCache(resume.getUserId());
+
         return ResumeExtractionResponse.builder()
                 .resumeId(resumeId)
                 .mensagem("Currículo extraído e perfil atualizado com sucesso")
@@ -64,31 +68,26 @@ public class ResumeExtractionService implements ResumeExtractionUseCase {
     private List<String> populateProfile(Long userId, ParsedResumeDto parsed) {
         List<String> faltando = new ArrayList<>();
 
-        // Limpa dados anteriores
         userProfileRepository.deleteByUserId(userId);
         userSkillRepository.deleteByUserId(userId);
         userExperienceRepository.deleteByUserId(userId);
         userCertificationRepository.deleteByUserId(userId);
         userProjectRepository.deleteByUserId(userId);
 
-        // Salva perfil base
         userProfileRepository.save(UserProfile.builder()
                 .userId(userId)
                 .build());
 
-        // Verifica campos faltando
-        if (isBlank(parsed.getNome()))         faltando.add("nome");
-        if (isBlank(parsed.getEmail()))        faltando.add("email");
-        if (isBlank(parsed.getTelefone()))     faltando.add("telefone");
+        if (isBlank(parsed.getNome()))     faltando.add("nome");
+        if (isBlank(parsed.getEmail()))    faltando.add("email");
+        if (isBlank(parsed.getTelefone())) faltando.add("telefone");
 
-        // Skills
         if (parsed.getSkills() == null || parsed.getSkills().isEmpty()) {
             faltando.add("skills");
         } else {
             userSkillRepository.saveAll(userId, parsed.getSkills());
         }
 
-        // Experiências
         if (parsed.getExperiencias() == null || parsed.getExperiencias().isEmpty()) {
             faltando.add("experiencias");
         } else {
@@ -105,7 +104,6 @@ public class ResumeExtractionService implements ResumeExtractionUseCase {
             userExperienceRepository.saveAll(experiences);
         }
 
-        // Certificações
         if (parsed.getCertificacoes() == null || parsed.getCertificacoes().isEmpty()) {
             faltando.add("certificacoes");
         } else {
@@ -120,7 +118,6 @@ public class ResumeExtractionService implements ResumeExtractionUseCase {
             userCertificationRepository.saveAll(certifications);
         }
 
-        // Projetos
         if (parsed.getProjetos() == null || parsed.getProjetos().isEmpty()) {
             faltando.add("projetos");
         } else {

@@ -13,6 +13,8 @@ import com.searchjobs.api.domain.port.out.JobSearchPort;
 import com.searchjobs.api.domain.port.out.UserProfileRepository;
 import com.searchjobs.api.domain.port.out.UserSkillRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -30,6 +32,7 @@ public class JobSearchService implements JobSearchUseCase {
     private final ObjectMapper objectMapper;
 
     @Override
+    @Cacheable(value = "jobs-search", key = "#userId")
     public List<JobResponse> searchJobsForUser(Long userId) {
         String cargoDesejado = userProfileRepository.findByUserId(userId)
                 .map(UserProfile::getCargoDesejado)
@@ -124,6 +127,10 @@ public class JobSearchService implements JobSearchUseCase {
             System.out.println(">>> Erro ao rankear vagas: " + e.getMessage());
             return jobs.stream().map(this::toResponse).toList();
         }
+    }
+
+    @CacheEvict(value = "jobs-search", key = "#userId")
+    public void evictJobsCache(Long userId) {
     }
 
     private JobResponse toResponse(Job job) {
