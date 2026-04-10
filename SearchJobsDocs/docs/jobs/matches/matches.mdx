@@ -1,0 +1,103 @@
+---
+id: jobs-matches
+title: Listar Matches Salvos
+---
+
+## Descricao
+
+Retorna todos os matches de compatibilidade previamente calculados e salvos no banco para o usuario autenticado. Este endpoint nao chama a IA — apenas recupera os resultados ja persistidos pela ultima execucao de `POST /api/jobs/match-all`.
+
+:::info Pre-requisito
+Os matches precisam ter sido gerados anteriormente via `POST /api/jobs/match-all`. Se ainda nao foram calculados, a resposta sera uma lista vazia.
+:::
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+## Request
+
+### Metodo e URL
+
+`GET /api/jobs/matches`
+
+### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+
+### Query Params
+
+Nenhum.
+
+### Body
+
+Nenhum.
+
+## Response
+
+### Sucesso
+
+Status: `200 OK`
+
+```json
+[
+  {
+    "jobId": 1,
+    "titulo": "Backend Developer - Java",
+    "empresa": "Tech Corp",
+    "localizacao": "Sao Paulo, SP",
+    "modeloTrabalho": "Remote",
+    "jobUrl": "https://www.linkedin.com/jobs/view/abc123",
+    "score": 87.5,
+    "justificativa": "O candidato possui experiencia solida em Java e Spring Boot, que sao os principais requisitos da vaga.",
+    "pontosFortres": ["Java", "Spring Boot", "PostgreSQL"],
+    "gaps": ["Kubernetes", "AWS"]
+  }
+]
+```
+
+#### Lista vazia (nenhum match calculado)
+
+```json
+[]
+```
+
+### Campos da Resposta
+
+| Campo          | Tipo         | Descricao                                                        |
+|----------------|--------------|------------------------------------------------------------------|
+| jobId          | Long         | ID interno da vaga no banco de dados                             |
+| titulo         | String       | Titulo da vaga                                                   |
+| empresa        | String       | Nome da empresa                                                  |
+| localizacao    | String       | Localizacao da vaga                                              |
+| modeloTrabalho | String       | Modelo de trabalho (Remote, Hybrid, On-site)                     |
+| jobUrl         | String       | Link para a vaga original                                        |
+| score          | Double       | Pontuacao de compatibilidade de 0 a 100                          |
+| justificativa  | String       | Explicacao do score gerada pela IA                               |
+| pontosFortres  | Array String | Skills e experiencias do candidato alinhadas com a vaga          |
+| gaps           | Array String | Requisitos da vaga que o candidato nao possui                    |
+
+### Erros
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+## Regras de Negocio
+
+- Retorna somente os matches do usuario autenticado, nunca de outros usuarios.
+- O ID do usuario e extraido diretamente do JWT.
+- Vagas que foram deletadas do banco retornam `null` e sao filtradas da resposta.
+- Os resultados nao possuem ordenacao garantida — para resultados ordenados por score, utilize `POST /api/jobs/match-all`.
+
+## Fluxo Resumido
+
+1. Extrai o `userId` do JWT no header `Authorization`.
+2. Busca todos os `JobMatch` do usuario no banco.
+3. Para cada match, busca os dados da vaga associada.
+4. Filtra matches cuja vaga nao existe mais no banco.
+5. Retorna a lista com `200 OK`.
