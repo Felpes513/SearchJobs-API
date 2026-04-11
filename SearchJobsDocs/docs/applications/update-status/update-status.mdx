@@ -1,0 +1,149 @@
+---
+id: applications-update-status
+title: Atualizar Status da Candidatura
+---
+
+## Descricao
+
+Atualiza o status de uma candidatura existente do usuario autenticado. Permite mover a candidatura entre as colunas do quadro Kanban.
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+## Request
+
+### Metodo e URL
+
+`PUT /api/applications/{id}/status`
+
+### Headers
+
+| Header        | Valor                    |
+|---------------|--------------------------|
+| Authorization | `Bearer <access_token>`  |
+| Content-Type  | `application/json`       |
+
+### Path Params
+
+| Parametro | Tipo | Obrigatorio | Descricao              |
+|-----------|------|-------------|------------------------|
+| id        | Long | Sim         | ID da candidatura      |
+
+### Query Params
+
+Nenhum.
+
+### Body
+
+```json
+{
+  "status": "CANDIDATADO"
+}
+```
+
+### Campos do Body
+
+| Campo  | Tipo   | Obrigatorio | Descricao                              |
+|--------|--------|-------------|----------------------------------------|
+| status | String | Sim         | Novo status da candidatura (ver tabela de valores validos) |
+
+### Valores Validos para `status`
+
+| Valor        | Descricao                                         |
+|--------------|---------------------------------------------------|
+| `PENDENTE`   | Candidatura salva, ainda nao enviada              |
+| `SALVA`      | Vaga salva para candidatura futura                |
+| `EM_FILA`    | Candidatura em fila para envio                    |
+| `CANDIDATADO`| Candidatura enviada                               |
+| `EM_ANALISE` | Candidatura em analise pelo recrutador            |
+| `ENTREVISTA` | Candidato convocado para entrevista               |
+| `APROVADO`   | Candidatura aprovada                              |
+| `REJEITADO`  | Candidatura rejeitada                             |
+| `IGNORADO`   | Candidatura ignorada/descartada pelo usuario      |
+
+## Response
+
+### Sucesso
+
+Status: `200 OK`
+
+Sem body de resposta.
+
+### Erros
+
+`400 Bad Request`
+
+Retornado quando o status informado nao e um valor valido ou a candidatura nao pertence ao usuario.
+
+```json
+{
+  "status": 400,
+  "erro": "Bad Request",
+  "mensagem": "Candidatura nao encontrada",
+  "path": "/api/applications/1/status",
+  "timestamp": "2025-04-10T14:00:00"
+}
+```
+
+```json
+{
+  "status": 400,
+  "erro": "Bad Request",
+  "mensagem": "Status invalido: OUTRO_STATUS",
+  "path": "/api/applications/1/status",
+  "timestamp": "2025-04-10T14:00:00"
+}
+```
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+```json
+{
+  "status": 401,
+  "erro": "Unauthorized",
+  "mensagem": "Token ausente ou invalido",
+  "path": "/api/applications/1/status",
+  "timestamp": "2025-04-10T14:00:00"
+}
+```
+
+`422 Unprocessable Entity`
+
+Retornado quando o campo `status` nao e informado no body.
+
+```json
+{
+  "status": 422,
+  "erro": "Validation Error",
+  "mensagem": "Erro de validacao nos campos",
+  "campos": {
+    "status": "Status e obrigatorio"
+  },
+  "path": "/api/applications/1/status",
+  "timestamp": "2025-04-10T14:00:00"
+}
+```
+
+## Validacoes
+
+- `status` e obrigatorio (nao pode ser nulo ou vazio).
+- O valor de `status` deve ser um dos valores validos listados acima.
+- A candidatura deve pertencer ao usuario autenticado.
+
+## Regras de Negocio
+
+- O ID do usuario e extraido diretamente do JWT — usuarios so podem atualizar suas proprias candidaturas.
+- Os demais dados da candidatura (jobId, observacao, dataCandidatura) sao preservados na atualizacao.
+
+## Fluxo Resumido
+
+1. Extrai o `userId` do JWT no header `Authorization`.
+2. Busca a candidatura pelo `id` e `userId` — lanca `400` se nao encontrada.
+3. Valida se o `status` informado e um valor aceito — lanca `400` se invalido.
+4. Atualiza o status da candidatura no banco.
+5. Retorna `200 OK` sem body.

@@ -1,0 +1,119 @@
+---
+id: settings-put
+title: Atualizar Configurações
+---
+
+## Descricao
+
+Atualiza as configuracoes do usuario autenticado. Substitui os campos `language`, `theme` e `termsAccepted` pelos valores enviados. As chaves de API (`openAiApiKey` e `jsearchApiKey`) so sao atualizadas se enviadas no body — campos ausentes ou `null` mantem a chave existente no banco.
+
+:::caution Chaves de API
+Como as chaves nunca sao retornadas em texto puro, o front-end nao pode pre-preencher os campos com os valores reais. Envie a chave apenas quando o usuario informar um novo valor. Omitir o campo mantem a chave anterior.
+:::
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+## Request
+
+### Metodo e URL
+
+`PUT /api/settings`
+
+### Headers
+
+| Header        | Valor                    |
+|---------------|--------------------------|
+| Authorization | `Bearer <access_token>`  |
+| Content-Type  | `application/json`       |
+
+### Query Params
+
+Nenhum.
+
+### Body
+
+```json
+{
+  "language": "pt-BR",
+  "theme": "system",
+  "termsAccepted": true,
+  "openAiApiKey": "sk-...",
+  "jsearchApiKey": "..."
+}
+```
+
+### Campos do Body
+
+| Campo         | Tipo    | Obrigatorio | Descricao                                                                        |
+|---------------|---------|-------------|----------------------------------------------------------------------------------|
+| language      | String  | Nao         | Idioma da interface (ex: `pt-BR`, `en-US`)                                       |
+| theme         | String  | Nao         | Tema da interface (`light`, `dark`, `system`)                                    |
+| termsAccepted | Boolean | Nao         | Aceitacao dos termos de uso. `false` se omitido.                                 |
+| openAiApiKey  | String  | Nao         | Chave da API OpenAI. Omitir para manter a chave atual.                           |
+| jsearchApiKey | String  | Nao         | Chave da API JSearch (RapidAPI). Omitir para manter a chave atual.              |
+
+## Response
+
+### Sucesso
+
+Status: `200 OK`
+
+Retorna as configuracoes atualizadas no mesmo formato do `GET /api/settings`.
+
+```json
+{
+  "language": "pt-BR",
+  "theme": "system",
+  "termsAccepted": true,
+  "openAiApiKeyMasked": "sk-****1234",
+  "jsearchApiKeyMasked": "****7890",
+  "hasOpenAiApiKey": true,
+  "hasJsearchApiKey": true,
+  "updatedAt": "2025-04-10T14:00:00"
+}
+```
+
+### Erros
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+```json
+{
+  "status": 401,
+  "erro": "Unauthorized",
+  "mensagem": "Token ausente ou invalido",
+  "path": "/api/settings",
+  "timestamp": "2025-04-10T14:00:00"
+}
+```
+
+## Comportamento por campo
+
+| Campo         | Se enviado com valor | Se enviado como `null` ou omitido       |
+|---------------|----------------------|-----------------------------------------|
+| language      | Atualizado           | Definido como `null`                    |
+| theme         | Atualizado           | Definido como `null`                    |
+| termsAccepted | Atualizado           | Definido como `false`                   |
+| openAiApiKey  | Atualizado           | Chave anterior mantida no banco         |
+| jsearchApiKey | Atualizado           | Chave anterior mantida no banco         |
+
+## Seguranca
+
+- As chaves sao criptografadas com AES-256 antes de serem persistidas.
+- As chaves nunca sao logadas nem retornadas em texto puro.
+- Toda escrita e vinculada exclusivamente ao `userId` extraido do JWT.
+
+## Fluxo Resumido
+
+1. Extrai o `userId` do JWT no header `Authorization`.
+2. Busca as configuracoes existentes do usuario (ou cria uma base vazia).
+3. Substitui `language`, `theme` e `termsAccepted` pelos valores do body.
+4. Atualiza `openAiApiKey` e `jsearchApiKey` apenas se enviados e nao nulos.
+5. Criptografa as chaves e persiste no banco.
+6. Retorna as configuracoes atualizadas com `200 OK`.

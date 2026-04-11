@@ -12,12 +12,22 @@ O fluxo funciona em tres etapas:
 2. **Analise por IA**: o GPT avalia a compatibilidade individualmente para cada vaga selecionada.
 3. **Persistencia**: os resultados sao salvos no banco e retornados ordenados por score (maior primeiro).
 
-:::info Pre-requisito
-O usuario deve ter vagas disponiveis no banco antes de executar este endpoint. Utilize `GET /api/jobs/search` para buscar e salvar vagas primeiro.
+:::info Pre-requisitos
+Antes de executar este endpoint, o usuario precisa:
+1. Configurar a **OpenAI API Key** em `PUT /api/settings`.
+2. Ter vagas disponiveis no banco — utilize `GET /api/jobs/search` primeiro.
+
+Se a chave estiver ausente, a API retorna `400` com mensagem indicando que a chave precisa ser configurada.
+:::
+
+:::tip Cache
+Os resultados sao armazenados em cache por **10 minutos** por usuario. Requisicoes subsequentes dentro desse periodo retornam o resultado cacheado sem chamar o GPT novamente.
+
+O cache e invalidado automaticamente quando o usuario extrai um novo curriculo via `POST /api/resumes/{id}/extract`, garantindo que a proxima analise reflita o perfil atualizado.
 :::
 
 :::caution Custo de processamento
-Este endpoint faz uma chamada a API da OpenAI para cada vaga analisada (ate 15). Utilize com moderacao para evitar custos excessivos.
+Este endpoint faz uma chamada a API da OpenAI para cada vaga analisada (ate 15). O cache reduz o consumo de creditos em chamadas repetidas dentro da janela de 10 minutos.
 :::
 
 ## Autenticacao
@@ -111,34 +121,54 @@ Retorna a lista de matches ordenada por score decrescente (melhor compatibilidad
 
 | Status | Descricao |
 |--------|-----------|
-| `400 Bad Request` | Nenhuma vaga encontrada no banco. Execute `GET /api/jobs/search` primeiro. |
+| `400 Bad Request` | OpenAI API Key ausente nas settings, ou nenhuma vaga encontrada no banco. |
 | `401 Unauthorized` | Token JWT ausente ou invalido. |
+| `502 Bad Gateway` | Credencial da API de IA invalida ou sem permissao de acesso. |
+| `503 Service Unavailable` | Creditos da API de IA esgotados ou servico temporariamente indisponivel. |
 
-Exemplo de erro `400`:
+Exemplos de erro `400`:
 
 ```json
 {
-  "message": "Nenhuma vaga encontrada. Faca uma busca de vagas primeiro."
+  "status": 400,
+  "erro": "Bad Request",
+  "mensagem": "Configure sua OpenAI API Key nas configuracoes antes de analisar vagas",
+  "path": "/api/jobs/match-all",
+  "timestamp": "2025-04-10T14:00:00"
+}
+```
+
+```json
+{
+  "status": 400,
+  "erro": "Bad Request",
+  "mensagem": "Nenhuma vaga encontrada. Faca uma busca de vagas primeiro.",
+  "path": "/api/jobs/match-all",
+  "timestamp": "2025-04-10T14:00:00"
 }
 ```
 
 ## Regras de Negocio
 
+- O usuario precisa ter a **OpenAI API Key** configurada em `PUT /api/settings`.
 - O perfil do candidato enviado a IA inclui: cargo desejado, resumo profissional, skills, experiencias e projetos.
 - Se o usuario nao tiver skills cadastradas, as primeiras 15 vagas sao selecionadas sem filtragem.
 - Se houver skills, as vagas sao pre-filtradas por correspondencia textual com titulo, descricao e requisitos, priorizando as com mais matches.
 - Matches anteriores da mesma vaga para o mesmo usuario sao deletados antes de salvar o novo resultado.
 - Resultados sao retornados ordenados por score (maior para menor).
+- O resultado e armazenado em cache por 10 minutos por usuario (maximo de 100 usuarios em cache simultaneamente).
+- O cache e invalidado automaticamente apos extracao de curriculo.
 
 ## Fluxo Resumido
 
 1. Extrai o `userId` do JWT no header `Authorization`.
-2. Busca todas as vagas no banco — lanca `400` se nao houver nenhuma.
-3. Busca as skills do usuario.
-4. Pre-filtra ate 15 vagas com maior correspondencia de skills (ou as 15 primeiras, se sem skills).
-5. Monta o texto de perfil do usuario (cargo, resumo, skills, experiencias, projetos).
-6. Para cada vaga filtrada:
+2. Busca a OpenAI API Key do usuario nas settings — lanca `400` se ausente.
+3. Busca todas as vagas no banco — lanca `400` se nao houver nenhuma.
+4. Busca as skills do usuario.
+5. Pre-filtra ate 15 vagas com maior correspondencia de skills (ou as 15 primeiras, se sem skills).
+6. Monta o texto de perfil do usuario (cargo, resumo, skills, experiencias, projetos).
+7. Para cada vaga filtrada:
    a. Deleta o match anterior (se existir).
-   b. Envia perfil + vaga ao GPT e recebe score, justificativa, pontosFortres e gaps.
+   b. Envia perfil + vaga ao GPT (usando a chave do usuario) e recebe score, justificativa, pontosFortres e gaps.
    c. Salva o resultado como `JobMatch` no banco.
-7. Retorna a lista de matches ordenada por score com `200 OK`.
+8. Retorna a lista de matches ordenada por score com `200 OK`.

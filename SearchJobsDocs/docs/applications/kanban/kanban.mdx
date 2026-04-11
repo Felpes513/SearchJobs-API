@@ -1,0 +1,131 @@
+---
+id: applications-kanban
+title: Listar Kanban de Candidaturas
+---
+
+## Descricao
+
+Retorna todas as candidaturas do usuario autenticado organizadas em colunas de um quadro Kanban, agrupadas por status. Cada coluna representa uma etapa do processo seletivo.
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+## Request
+
+### Metodo e URL
+
+`GET /api/applications`
+
+### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+
+### Query Params
+
+Nenhum.
+
+### Body
+
+Nenhum.
+
+## Response
+
+### Sucesso
+
+Status: `200 OK`
+
+Retorna um objeto com uma lista de candidaturas para cada coluna do Kanban.
+
+```json
+{
+  "pendente": [
+    {
+      "id": 1,
+      "jobId": 10,
+      "titulo": "Backend Developer - Java",
+      "empresa": "Tech Corp",
+      "localizacao": "Sao Paulo, SP",
+      "modeloTrabalho": "Remote",
+      "jobUrl": "https://www.linkedin.com/jobs/view/abc123",
+      "status": "PENDENTE",
+      "observacao": "Vaga interessante, aguardar feedback",
+      "dataCandidatura": "2025-04-10T14:00:00"
+    }
+  ],
+  "salva": [],
+  "emFila": [],
+  "candidatado": [],
+  "emAnalise": [],
+  "entrevista": [],
+  "aprovado": [],
+  "rejeitado": [],
+  "ignorado": []
+}
+```
+
+### Campos da Resposta
+
+**Envelope Kanban**
+
+| Campo        | Tipo  | Descricao                                                  |
+|--------------|-------|------------------------------------------------------------|
+| pendente     | Array | Candidaturas com status `PENDENTE`                         |
+| salva        | Array | Candidaturas com status `SALVA`                            |
+| emFila       | Array | Candidaturas com status `EM_FILA`                          |
+| candidatado  | Array | Candidaturas com status `CANDIDATADO`                      |
+| emAnalise    | Array | Candidaturas com status `EM_ANALISE`                       |
+| entrevista   | Array | Candidaturas com status `ENTREVISTA`                       |
+| aprovado     | Array | Candidaturas com status `APROVADO`                         |
+| rejeitado    | Array | Candidaturas com status `REJEITADO`                        |
+| ignorado     | Array | Candidaturas com status `IGNORADO`                         |
+
+**Objeto ApplicationResponse (cada item das listas)**
+
+| Campo           | Tipo   | Descricao                                          |
+|-----------------|--------|----------------------------------------------------|
+| id              | Long   | ID da candidatura                                  |
+| jobId           | Long   | ID da vaga associada                               |
+| titulo          | String | Titulo da vaga                                     |
+| empresa         | String | Nome da empresa                                    |
+| localizacao     | String | Localizacao da vaga                                |
+| modeloTrabalho  | String | Modelo de trabalho (Remote, Hybrid, On-site)       |
+| jobUrl          | String | Link para a vaga original                          |
+| status          | String | Status atual da candidatura                        |
+| observacao      | String | Anotacao opcional do usuario sobre a candidatura   |
+| dataCandidatura | String | Data e hora da candidatura (ISO 8601)              |
+
+### Erros
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+```json
+{
+  "status": 401,
+  "erro": "Unauthorized",
+  "mensagem": "Token ausente ou invalido",
+  "path": "/api/applications",
+  "timestamp": "2025-04-10T14:00:00"
+}
+```
+
+## Regras de Negocio
+
+- Retorna somente as candidaturas do usuario autenticado, nunca de outros usuarios.
+- O ID do usuario e extraido diretamente do JWT.
+- Candidaturas cuja vaga foi deletada do banco sao filtradas da resposta (`null` ignorado).
+- Colunas sem candidaturas retornam listas vazias (`[]`), nunca `null`.
+
+## Fluxo Resumido
+
+1. Extrai o `userId` do JWT no header `Authorization`.
+2. Busca todas as candidaturas do usuario no banco.
+3. Para cada candidatura, busca os dados da vaga associada.
+4. Agrupa as candidaturas por status nas colunas do Kanban.
+5. Retorna o objeto Kanban com `200 OK`.

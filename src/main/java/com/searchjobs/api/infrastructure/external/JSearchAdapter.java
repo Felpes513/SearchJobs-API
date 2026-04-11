@@ -14,25 +14,21 @@ import java.util.List;
 @Component
 public class JSearchAdapter implements JobSearchPort {
 
-    private final RestClient restClient;
-    private final String apiKey;
     private final String apiHost;
+    private final String baseUrl;
 
     public JSearchAdapter(
-            @Value("${jsearch.api-key}") String apiKey,
             @Value("${jsearch.api-host}") String apiHost,
             @Value("${jsearch.base-url}") String baseUrl
     ) {
-        this.apiKey = apiKey;
         this.apiHost = apiHost;
-        this.restClient = RestClient.builder()
-                .baseUrl(baseUrl)
-                .build();
+        this.baseUrl = baseUrl;
     }
 
     @Override
-    public List<Job> search(String query) {
-        System.out.println("Query enviada ao JSearch " + query);
+    public List<Job> search(String query, String apiKey) {
+        RestClient restClient = RestClient.builder().baseUrl(baseUrl).build();
+
         JSearchResponseDto response = restClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/search")

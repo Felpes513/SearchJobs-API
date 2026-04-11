@@ -1,0 +1,109 @@
+---
+id: settings-get
+title: Buscar Configurações
+---
+
+## Descricao
+
+Retorna as configuracoes do usuario autenticado. As chaves de API (`openAiApiKey` e `jsearchApiKey`) nunca sao retornadas em texto puro — a resposta inclui versoes mascaradas e flags indicando se as chaves estao configuradas.
+
+:::info Configuracoes ausentes
+Se o usuario ainda nao configurou suas preferencias, a resposta retorna com os campos `language`, `theme` e `updatedAt` como `null` e `termsAccepted` como `false`.
+:::
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+## Request
+
+### Metodo e URL
+
+`GET /api/settings`
+
+### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+
+### Query Params
+
+Nenhum.
+
+### Body
+
+Nenhum.
+
+## Response
+
+### Sucesso
+
+Status: `200 OK`
+
+```json
+{
+  "language": "pt-BR",
+  "theme": "system",
+  "termsAccepted": true,
+  "openAiApiKeyMasked": "sk-****1234",
+  "jsearchApiKeyMasked": "****7890",
+  "hasOpenAiApiKey": true,
+  "hasJsearchApiKey": true,
+  "updatedAt": "2025-04-10T14:00:00"
+}
+```
+
+#### Usuario sem configuracoes salvas
+
+```json
+{
+  "termsAccepted": false,
+  "hasOpenAiApiKey": false,
+  "hasJsearchApiKey": false
+}
+```
+
+### Campos da Resposta
+
+| Campo              | Tipo    | Descricao                                                                 |
+|--------------------|---------|---------------------------------------------------------------------------|
+| language           | String  | Idioma da interface (ex: `pt-BR`, `en-US`). Null se nao configurado.      |
+| theme              | String  | Tema da interface (`light`, `dark`, `system`). Null se nao configurado.   |
+| termsAccepted      | Boolean | Indica se o usuario aceitou os termos de uso                              |
+| openAiApiKeyMasked | String  | Versao mascarada da OpenAI API Key (ex: `sk-****abcd`). Null se ausente.  |
+| jsearchApiKeyMasked| String  | Versao mascarada da JSearch API Key. Null se ausente.                     |
+| hasOpenAiApiKey    | Boolean | `true` se o usuario possui uma OpenAI API Key configurada                 |
+| hasJsearchApiKey   | Boolean | `true` se o usuario possui uma JSearch API Key configurada                |
+| updatedAt          | String  | Data e hora da ultima atualizacao (ISO 8601). Null se nunca salvo.        |
+
+### Erros
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+```json
+{
+  "status": 401,
+  "erro": "Unauthorized",
+  "mensagem": "Token ausente ou invalido",
+  "path": "/api/settings",
+  "timestamp": "2025-04-10T14:00:00"
+}
+```
+
+## Seguranca
+
+- As chaves de API sao armazenadas criptografadas no banco (AES-256).
+- A API nunca retorna o valor completo das chaves, apenas a versao mascarada.
+- Toda leitura e vinculada exclusivamente ao `userId` extraido do JWT.
+
+## Fluxo Resumido
+
+1. Extrai o `userId` do JWT no header `Authorization`.
+2. Busca as configuracoes do usuario no banco.
+3. Descriptografa as chaves internamente para verificar presenca e gerar o mascaramento.
+4. Retorna a resposta com os campos mascarados e as flags `has*` com `200 OK`.

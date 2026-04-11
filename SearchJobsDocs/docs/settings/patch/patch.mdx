@@ -1,0 +1,119 @@
+---
+id: settings-patch
+title: Atualizar Configurações Parcialmente
+---
+
+## Descricao
+
+Atualiza parcialmente as configuracoes do usuario autenticado. Diferente do `PUT`, campos omitidos ou `null` sao ignorados e mantem o valor atual no banco — inclusive para `language`, `theme` e `termsAccepted`.
+
+Use este endpoint quando quiser alterar apenas um ou dois campos sem sobrescrever os demais.
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+## Request
+
+### Metodo e URL
+
+`PATCH /api/settings`
+
+### Headers
+
+| Header        | Valor                    |
+|---------------|--------------------------|
+| Authorization | `Bearer <access_token>`  |
+| Content-Type  | `application/json`       |
+
+### Query Params
+
+Nenhum.
+
+### Body
+
+Envie apenas os campos que deseja alterar.
+
+```json
+{
+  "theme": "dark"
+}
+```
+
+```json
+{
+  "openAiApiKey": "sk-nova-chave...",
+  "jsearchApiKey": "nova-jsearch-key..."
+}
+```
+
+### Campos do Body
+
+| Campo         | Tipo    | Obrigatorio | Descricao                                                                        |
+|---------------|---------|-------------|----------------------------------------------------------------------------------|
+| language      | String  | Nao         | Idioma da interface (ex: `pt-BR`, `en-US`)                                       |
+| theme         | String  | Nao         | Tema da interface (`light`, `dark`, `system`)                                    |
+| termsAccepted | Boolean | Nao         | Aceitacao dos termos de uso                                                      |
+| openAiApiKey  | String  | Nao         | Chave da API OpenAI. Omitir para manter a chave atual.                           |
+| jsearchApiKey | String  | Nao         | Chave da API JSearch (RapidAPI). Omitir para manter a chave atual.              |
+
+## Response
+
+### Sucesso
+
+Status: `200 OK`
+
+Retorna as configuracoes completas apos o patch, no mesmo formato do `GET /api/settings`.
+
+```json
+{
+  "language": "pt-BR",
+  "theme": "dark",
+  "termsAccepted": true,
+  "openAiApiKeyMasked": "sk-****1234",
+  "jsearchApiKeyMasked": "****7890",
+  "hasOpenAiApiKey": true,
+  "hasJsearchApiKey": true,
+  "updatedAt": "2025-04-10T15:00:00"
+}
+```
+
+### Erros
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+```json
+{
+  "status": 401,
+  "erro": "Unauthorized",
+  "mensagem": "Token ausente ou invalido",
+  "path": "/api/settings",
+  "timestamp": "2025-04-10T15:00:00"
+}
+```
+
+## Diferenca entre PUT e PATCH
+
+| Comportamento              | PUT                          | PATCH                        |
+|----------------------------|------------------------------|------------------------------|
+| Campo omitido (`language`) | Definido como `null`         | Mantido o valor anterior     |
+| Campo omitido (`termsAccepted`) | Definido como `false`   | Mantido o valor anterior     |
+| Chave de API omitida       | Mantida (excecao das regras) | Mantida                      |
+
+## Seguranca
+
+- As chaves sao criptografadas com AES-256 antes de serem persistidas.
+- As chaves nunca sao logadas nem retornadas em texto puro.
+- Toda escrita e vinculada exclusivamente ao `userId` extraido do JWT.
+
+## Fluxo Resumido
+
+1. Extrai o `userId` do JWT no header `Authorization`.
+2. Busca as configuracoes existentes do usuario (ou cria uma base vazia).
+3. Para cada campo do body: se nao nulo, substitui o valor atual; caso contrario, mantem.
+4. Criptografa as chaves e persiste no banco.
+5. Retorna as configuracoes completas com `200 OK`.

@@ -12,22 +12,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class OpenAiExtractionAdapter implements AiExtractionPort {
 
-    private final OpenAIClient client;
     private final String model;
 
-    public OpenAiExtractionAdapter(
-            @Value("${openai.api-key}") String apiKey,
-            @Value("${openai.model}") String model
-    ) {
-        this.client = OpenAIOkHttpClient.builder()
-                .apiKey(apiKey)
-                .build();
+    public OpenAiExtractionAdapter(@Value("${openai.model}") String model) {
         this.model = model;
     }
 
     @Override
-    public String extractResumeData(String resumeText) {
-        String prompt = buildPrompt(resumeText);
+    public String extractResumeData(String prompt, String apiKey) {
+        OpenAIClient client = OpenAIOkHttpClient.builder()
+                .apiKey(apiKey)
+                .build();
 
         ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
                 .model(ChatModel.of(model))
@@ -37,64 +32,5 @@ public class OpenAiExtractionAdapter implements AiExtractionPort {
         ChatCompletion completion = client.chat().completions().create(params);
 
         return completion.choices().get(0).message().content().orElse("{}");
-    }
-
-    private String buildPrompt(String resumeText) {
-        return """
-            Você é um extrator de informações de currículos. Analise o texto abaixo e retorne APENAS um JSON válido, sem markdown, sem explicações, somente o JSON.
-            
-            O JSON deve ter exatamente esta estrutura:
-            {
-              "nome": "string",
-              "email": "string",
-              "telefone": "string",
-              "cidade": "string",
-              "estado": "string",
-              "linkedinUrl": "string",
-              "githubUrl": "string",
-              "resumoProfissional": "string",
-              "cargoDesejado": "string",
-              "skills": ["string"],
-              "experiencias": [
-                {
-                  "cargo": "string",
-                  "empresa": "string",
-                  "descricao": "string",
-                  "dataInicio": "string",
-                  "dataFim": "string"
-                }
-              ],
-              "certificacoes": [
-                {
-                  "nome": "string",
-                  "instituicao": "string",
-                  "dataObtencao": "string"
-                }
-              ],
-              "projetos": [
-                {
-                  "nome": "string",
-                  "descricao": "string",
-                  "stack": "string",
-                  "link": "string"
-                }
-              ]
-            }
-            
-            REGRAS IMPORTANTES:
-            - "resumoProfissional": extraia o objetivo ou resumo profissional do candidato
-            - "cidade" e "estado": extraia do endereço presente no currículo
-            - "linkedinUrl": extraia a URL completa do LinkedIn se presente
-            - "githubUrl": extraia o usuário ou URL do GitHub se presente
-            - "skills": extraia APENAS tecnologias, linguagens, frameworks e ferramentas específicas. Exemplos corretos: "Java", "Spring Boot", "Angular", "MySQL", "Docker", "Cypress". Exemplos INCORRETOS: "Desenvolvimento Full Stack", "Qualidade de Software"
-            - "certificacoes": inclua também formações acadêmicas como certificações, com instituição e data de conclusão
-            - "experiencias" - datas: converta para formato YYYY-MM se possível, caso contrário mantenha o texto original
-            - Para campos não encontrados use null para strings e [] para arrays
-            - "cargoDesejado": extraia o cargo ou objetivo profissional do candidato. Exemplos: "Desenvolvedor Java Junior", "Analista de Testes", "Desenvolvedor Full Stack". Deve ser curto, no máximo 5 palavras.
-            - "resumoProfissional": extraia o texto completo do objetivo ou resumo profissional
-            
-            Texto do currículo:
-            %s
-            """.formatted(resumeText);
     }
 }

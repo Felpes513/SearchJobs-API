@@ -5,5 +5,5 @@ import com.searchjobs.api.domain.model.Job;
 import java.util.List;
 
 public interface JobSearchPort {
-    List<Job> search(String query);
+    List<Job> search(String query, String apiKey);
 }
