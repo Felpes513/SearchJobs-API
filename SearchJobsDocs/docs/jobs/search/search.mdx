@@ -18,8 +18,12 @@ Os resultados da busca sao armazenados em cache por **10 minutos** por usuario. 
 O cache e invalidado automaticamente quando o usuario extrai um novo curriculo via `POST /api/resumes/{id}/extract`, garantindo que a proxima busca reflita o perfil atualizado.
 :::
 
-:::info Pre-requisito
-O usuario deve ter o campo **cargo desejado** preenchido no perfil antes de realizar a busca. Veja `PUT /api/profile`.
+:::info Pre-requisitos
+Antes de realizar a busca, o usuario precisa:
+1. Configurar a **OpenAI API Key** e a **JSearch API Key** em `PUT /api/settings`.
+2. Ter o campo **cargo desejado** preenchido no perfil (`PUT /api/profile`).
+
+Se alguma das chaves estiver ausente, a API retorna `400` com uma mensagem indicando qual chave esta faltando.
 :::
 
 ## Autenticacao
@@ -107,7 +111,27 @@ Retorna uma lista de vagas ordenadas por relevancia para o usuario (com base nas
 
 `400 Bad Request`
 
-Retornado quando o usuario nao tem o campo **cargo desejado** preenchido no perfil.
+Retornado em tres situacoes distintas: API Key ausente nas settings ou cargo desejado nao preenchido.
+
+```json
+{
+  "status": 400,
+  "erro": "Bad Request",
+  "mensagem": "Configure sua JSearch API Key nas configuracoes antes de buscar vagas",
+  "path": "/api/jobs/search",
+  "timestamp": "2025-04-09T10:30:00"
+}
+```
+
+```json
+{
+  "status": 400,
+  "erro": "Bad Request",
+  "mensagem": "Configure sua OpenAI API Key nas configuracoes antes de buscar vagas",
+  "path": "/api/jobs/search",
+  "timestamp": "2025-04-09T10:30:00"
+}
+```
 
 ```json
 {
@@ -133,8 +157,17 @@ Retornado quando o token JWT esta ausente ou invalido.
 }
 ```
 
+`502 Bad Gateway`
+
+Retornado quando a credencial da API OpenAI e invalida ou sem permissao.
+
+`503 Service Unavailable`
+
+Retornado quando os creditos da API OpenAI estao esgotados ou ha rate limit.
+
 ## Regras de Negocio
 
+- O usuario precisa ter a **JSearch API Key** e a **OpenAI API Key** configuradas em `PUT /api/settings`.
 - O campo **cargo desejado** do perfil do usuario e usado como query principal para busca no JSearch.
 - As **skills** do usuario sao usadas pelo GPT para rankear as vagas por relevancia.
 - Caso o usuario nao tenha skills cadastradas, as vagas sao retornadas na ordem original do JSearch.
@@ -147,10 +180,11 @@ Retornado quando o token JWT esta ausente ou invalido.
 
 1. Extrai o `userId` do token JWT.
 2. **Verifica o cache**: se houver resultado cacheado para o usuario, retorna imediatamente com `200 OK`.
-3. Busca o `cargoDesejado` no perfil do usuario — lanca erro `400` se nao estiver preenchido.
-4. Busca as skills do usuario no banco de dados.
-5. Envia a query de busca (cargo desejado) para a API JSearch.
-6. Salva as vagas retornadas no banco de dados.
-7. Envia as vagas e as skills ao GPT para rankeamento por relevancia.
-8. Armazena o resultado em cache por 10 minutos.
-9. Retorna a lista de vagas ordenada com `200 OK`.
+3. Busca as API Keys do usuario nas settings — lanca `400` se JSearch ou OpenAI Key estiver ausente.
+4. Busca o `cargoDesejado` no perfil do usuario — lanca `400` se nao estiver preenchido.
+5. Busca as skills do usuario no banco de dados.
+6. Envia a query de busca (cargo desejado) para a API JSearch usando a chave do usuario.
+7. Salva as vagas retornadas no banco de dados.
+8. Envia as vagas e as skills ao GPT (usando a chave OpenAI do usuario) para rankeamento por relevancia.
+9. Armazena o resultado em cache por 10 minutos.
+10. Retorna a lista de vagas ordenada com `200 OK`.

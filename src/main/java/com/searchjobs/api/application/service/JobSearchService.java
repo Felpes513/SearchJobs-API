@@ -3,14 +3,17 @@ package com.searchjobs.api.application.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.searchjobs.api.application.dto.response.JobResponse;
+import com.searchjobs.api.domain.exception.MissingApiKeyException;
 import com.searchjobs.api.domain.model.Job;
 import com.searchjobs.api.domain.model.UserProfile;
+import com.searchjobs.api.domain.model.UserSettings;
 import com.searchjobs.api.domain.model.UserSkill;
 import com.searchjobs.api.domain.port.in.JobSearchUseCase;
 import com.searchjobs.api.domain.port.out.AiExtractionPort;
 import com.searchjobs.api.domain.port.out.JobRepository;
 import com.searchjobs.api.domain.port.out.JobSearchPort;
 import com.searchjobs.api.domain.port.out.UserProfileRepository;
+import com.searchjobs.api.domain.port.out.UserSettingsRepository;
 import com.searchjobs.api.domain.port.out.UserSkillRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -28,12 +31,29 @@ public class JobSearchService implements JobSearchUseCase {
     private final JobRepository jobRepository;
     private final UserSkillRepository userSkillRepository;
     private final UserProfileRepository userProfileRepository;
+    private final UserSettingsRepository userSettingsRepository;
     private final AiExtractionPort aiExtractionPort;
     private final ObjectMapper objectMapper;
 
     @Override
     @Cacheable(value = "jobs-search", key = "#userId")
     public List<JobResponse> searchJobsForUser(Long userId) {
+        UserSettings settings = userSettingsRepository.findByUserId(userId)
+                .orElseThrow(() -> new MissingApiKeyException(
+                        "Configure suas API Keys nas configurações antes de buscar vagas"));
+
+        String jsearchKey = settings.getJsearchApiKey();
+        if (jsearchKey == null || jsearchKey.isBlank()) {
+            throw new MissingApiKeyException(
+                    "Configure sua JSearch API Key nas configurações antes de buscar vagas");
+        }
+
+        String openAiKey = settings.getOpenAiApiKey();
+        if (openAiKey == null || openAiKey.isBlank()) {
+            throw new MissingApiKeyException(
+                    "Configure sua OpenAI API Key nas configurações antes de buscar vagas");
+        }
+
         String cargoDesejado = userProfileRepository.findByUserId(userId)
                 .map(UserProfile::getCargoDesejado)
                 .orElse(null);
@@ -52,14 +72,14 @@ public class JobSearchService implements JobSearchUseCase {
         String query = buildQuery(cargoDesejado, skills);
         System.out.println(">>> Query enviada ao JSearch: " + query);
 
-        List<Job> jobs = jobSearchPort.search(query);
+        List<Job> jobs = jobSearchPort.search(query, jsearchKey);
         System.out.println(">>> Total de vagas retornadas: " + jobs.size());
 
         if (jobs.isEmpty()) return Collections.emptyList();
 
         jobs.forEach(jobRepository::save);
 
-        List<JobResponse> rankedJobs = rankJobsBySkills(jobs, skills);
+        List<JobResponse> rankedJobs = rankJobsBySkills(jobs, skills, openAiKey);
         return rankedJobs;
     }
 
@@ -73,7 +93,7 @@ public class JobSearchService implements JobSearchUseCase {
         return "Desenvolvedor Software";
     }
 
-    private List<JobResponse> rankJobsBySkills(List<Job> jobs, List<String> skills) {
+    private List<JobResponse> rankJobsBySkills(List<Job> jobs, List<String> skills, String openAiKey) {
         if (skills.isEmpty()) {
             return jobs.stream().map(this::toResponse).toList();
         }
@@ -90,17 +110,17 @@ public class JobSearchService implements JobSearchUseCase {
         String prompt = """
                 Você é um assistente de recrutamento. Dado um candidato com as seguintes skills:
                 %s
-                
+
                 E as seguintes vagas disponíveis:
                 %s
-                
+
                 Retorne APENAS um array JSON com os IDs das vagas ordenados do mais relevante para o menos relevante para este candidato.
                 Exemplo: ["id1", "id2", "id3"]
                 Retorne apenas o array, sem explicações, sem markdown.
                 """.formatted(skillsText, jobsText);
 
         try {
-            String response = aiExtractionPort.extractResumeData(prompt).trim()
+            String response = aiExtractionPort.extractResumeData(prompt, openAiKey).trim()
                     .replaceAll("```json", "")
                     .replaceAll("```", "")
                     .trim();

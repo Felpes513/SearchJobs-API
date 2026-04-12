@@ -6,4 +6,5 @@ import java.util.List;
 public interface JobMatchUseCase {
     List<JobMatchResponse> matchAll(Long userId);
     List<JobMatchResponse> getMatches(Long userId);
+    void evictMatchAllCache(Long userId);
 }

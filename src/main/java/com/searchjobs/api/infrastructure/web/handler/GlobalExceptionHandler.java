@@ -1,9 +1,13 @@
 package com.searchjobs.api.infrastructure.web.handler;
 
 import com.searchjobs.api.domain.exception.EmailAlreadyExistsException;
+import com.searchjobs.api.domain.exception.MissingApiKeyException;
 import com.searchjobs.api.domain.exception.ResumeNotFoundException;
 import com.openai.errors.OpenAIException;
+import com.openai.errors.PermissionDeniedException;
 import com.openai.errors.RateLimitException;
+import com.openai.errors.UnauthorizedException;
+import com.openai.errors.UnprocessableEntityException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +38,12 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
     }
 
+    @ExceptionHandler(MissingApiKeyException.class)
+    public ResponseEntity<ErrorResponse> handleMissingApiKey(
+            MissingApiKeyException ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
+    }
+
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleBadCredentials(
             BadCredentialsException ex, HttpServletRequest request) {
@@ -62,10 +72,34 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.PAYLOAD_TOO_LARGE, "Arquivo muito grande. Tamanho máximo permitido: 10MB", request.getRequestURI());
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ErrorResponse> handleOpenAiUnauthorized(
+            UnauthorizedException ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_GATEWAY, "Serviço de IA indisponível: credencial da API inválida ou ausente.", request.getRequestURI());
+    }
+
+    @ExceptionHandler(PermissionDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleOpenAiPermission(
+            PermissionDeniedException ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_GATEWAY, "Serviço de IA indisponível: sem permissão para acessar o recurso solicitado.", request.getRequestURI());
+    }
+
     @ExceptionHandler(RateLimitException.class)
     public ResponseEntity<ErrorResponse> handleRateLimit(
             RateLimitException ex, HttpServletRequest request) {
+        boolean isQuotaExceeded = ex.code()
+                .map(code -> code.equals("insufficient_quota"))
+                .orElse(false);
+        if (isQuotaExceeded) {
+            return build(HttpStatus.SERVICE_UNAVAILABLE, "Créditos da API de IA esgotados. Verifique o saldo da conta OpenAI.", request.getRequestURI());
+        }
         return build(HttpStatus.SERVICE_UNAVAILABLE, "Serviço de IA temporariamente indisponível. Tente novamente em alguns instantes.", request.getRequestURI());
+    }
+
+    @ExceptionHandler(UnprocessableEntityException.class)
+    public ResponseEntity<ErrorResponse> handleOpenAiUnprocessable(
+            UnprocessableEntityException ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_GATEWAY, "O serviço de IA não conseguiu processar a requisição. Tente novamente.", request.getRequestURI());
     }
 
     @ExceptionHandler(OpenAIException.class)

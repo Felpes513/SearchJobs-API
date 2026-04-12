@@ -5,6 +5,8 @@ import com.searchjobs.api.application.dto.internal.ParsedResumeDto;
 import com.searchjobs.api.application.dto.response.ResumeExtractionResponse;
 import com.searchjobs.api.domain.exception.ResumeNotFoundException;
 import com.searchjobs.api.domain.model.*;
+import com.searchjobs.api.domain.exception.MissingApiKeyException;
+import com.searchjobs.api.domain.port.in.JobMatchUseCase;
 import com.searchjobs.api.domain.port.in.JobSearchUseCase;
 import com.searchjobs.api.domain.port.in.ResumeExtractionUseCase;
 import com.searchjobs.api.domain.port.out.*;
@@ -30,7 +32,9 @@ public class ResumeExtractionService implements ResumeExtractionUseCase {
     private final UserExperienceRepository userExperienceRepository;
     private final UserCertificationRepository userCertificationRepository;
     private final UserProjectRepository userProjectRepository;
+    private final UserSettingsRepository userSettingsRepository;
     private final JobSearchUseCase jobSearchUseCase;
+    private final JobMatchUseCase jobMatchUseCase;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -38,8 +42,15 @@ public class ResumeExtractionService implements ResumeExtractionUseCase {
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new ResumeNotFoundException(resumeId));
 
+        String openAiKey = userSettingsRepository.findByUserId(resume.getUserId())
+                .map(s -> s.getOpenAiApiKey())
+                .filter(k -> k != null && !k.isBlank())
+                .orElseThrow(() -> new MissingApiKeyException(
+                        "Configure sua OpenAI API Key nas configurações antes de extrair o currículo"));
+
         String extractedText = extractTextFromPdf(resume.getFilePath());
-        String parsedJson = aiExtractionPort.extractResumeData(extractedText);
+        String prompt = buildExtractionPrompt(extractedText);
+        String parsedJson = aiExtractionPort.extractResumeData(prompt, openAiKey);
 
         Resume updated = Resume.builder()
                 .id(resume.getId())
@@ -57,6 +68,7 @@ public class ResumeExtractionService implements ResumeExtractionUseCase {
         List<String> camposFaltando = populateProfile(resume.getUserId(), parsed);
 
         jobSearchUseCase.evictJobsCache(resume.getUserId());
+        jobMatchUseCase.evictMatchAllCache(resume.getUserId());
 
         return ResumeExtractionResponse.builder()
                 .resumeId(resumeId)
@@ -161,5 +173,64 @@ public class ResumeExtractionService implements ResumeExtractionUseCase {
 
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    private String buildExtractionPrompt(String resumeText) {
+        return """
+            Você é um extrator de informações de currículos. Analise o texto abaixo e retorne APENAS um JSON válido, sem markdown, sem explicações, somente o JSON.
+
+            O JSON deve ter exatamente esta estrutura:
+            {
+              "nome": "string",
+              "email": "string",
+              "telefone": "string",
+              "cidade": "string",
+              "estado": "string",
+              "linkedinUrl": "string",
+              "githubUrl": "string",
+              "resumoProfissional": "string",
+              "cargoDesejado": "string",
+              "skills": ["string"],
+              "experiencias": [
+                {
+                  "cargo": "string",
+                  "empresa": "string",
+                  "descricao": "string",
+                  "dataInicio": "string",
+                  "dataFim": "string"
+                }
+              ],
+              "certificacoes": [
+                {
+                  "nome": "string",
+                  "instituicao": "string",
+                  "dataObtencao": "string"
+                }
+              ],
+              "projetos": [
+                {
+                  "nome": "string",
+                  "descricao": "string",
+                  "stack": "string",
+                  "link": "string"
+                }
+              ]
+            }
+
+            REGRAS IMPORTANTES:
+            - "resumoProfissional": extraia o objetivo ou resumo profissional do candidato
+            - "cidade" e "estado": extraia do endereço presente no currículo
+            - "linkedinUrl": extraia a URL completa do LinkedIn se presente
+            - "githubUrl": extraia o usuário ou URL do GitHub se presente
+            - "skills": extraia APENAS tecnologias, linguagens, frameworks e ferramentas específicas. Exemplos corretos: "Java", "Spring Boot", "Angular", "MySQL", "Docker", "Cypress". Exemplos INCORRETOS: "Desenvolvimento Full Stack", "Qualidade de Software"
+            - "certificacoes": inclua também formações acadêmicas como certificações, com instituição e data de conclusão
+            - "experiencias" - datas: converta para formato YYYY-MM se possível, caso contrário mantenha o texto original
+            - Para campos não encontrados use null para strings e [] para arrays
+            - "cargoDesejado": extraia o cargo ou objetivo profissional do candidato. Exemplos: "Desenvolvedor Java Junior", "Analista de Testes", "Desenvolvedor Full Stack". Deve ser curto, no máximo 5 palavras.
+            - "resumoProfissional": extraia o texto completo do objetivo ou resumo profissional
+
+            Texto do currículo:
+            %s
+            """.formatted(resumeText);
     }
 }

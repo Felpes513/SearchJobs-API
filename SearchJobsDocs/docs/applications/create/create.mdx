@@ -1,0 +1,122 @@
+---
+id: applications-create
+title: Criar Candidatura
+---
+
+## Descricao
+
+Registra uma nova candidatura para o usuario autenticado vinculando-o a uma vaga existente no banco de dados. A candidatura e criada com status inicial `PENDENTE`.
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+## Request
+
+### Metodo e URL
+
+`POST /api/applications`
+
+### Headers
+
+| Header        | Valor                    |
+|---------------|--------------------------|
+| Authorization | `Bearer <access_token>`  |
+| Content-Type  | `application/json`       |
+
+### Query Params
+
+Nenhum.
+
+### Body
+
+```json
+{
+  "jobId": 10,
+  "observacao": "Vaga interessante, aguardar feedback"
+}
+```
+
+### Campos do Body
+
+| Campo      | Tipo   | Obrigatorio | Descricao                                        |
+|------------|--------|-------------|--------------------------------------------------|
+| jobId      | Long   | Sim         | ID da vaga a ser candidatado (deve existir no banco) |
+| observacao | String | Nao         | Anotacao opcional do usuario sobre a candidatura |
+
+## Response
+
+### Sucesso
+
+Status: `201 Created`
+
+Sem body de resposta.
+
+### Erros
+
+`400 Bad Request`
+
+Retornado quando a vaga nao existe ou o usuario ja possui uma candidatura ativa para a mesma vaga.
+
+```json
+{
+  "status": 400,
+  "erro": "Bad Request",
+  "mensagem": "Voce ja se candidatou a esta vaga",
+  "path": "/api/applications",
+  "timestamp": "2025-04-10T14:00:00"
+}
+```
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+```json
+{
+  "status": 401,
+  "erro": "Unauthorized",
+  "mensagem": "Token ausente ou invalido",
+  "path": "/api/applications",
+  "timestamp": "2025-04-10T14:00:00"
+}
+```
+
+`422 Unprocessable Entity`
+
+Retornado quando campos obrigatorios nao sao informados.
+
+```json
+{
+  "status": 422,
+  "erro": "Validation Error",
+  "mensagem": "Erro de validacao nos campos",
+  "campos": {
+    "jobId": "jobId e obrigatorio"
+  },
+  "path": "/api/applications",
+  "timestamp": "2025-04-10T14:00:00"
+}
+```
+
+## Validacoes
+
+- `jobId` e obrigatorio (nao pode ser nulo).
+- A vaga referenciada por `jobId` deve existir no banco de dados.
+- O usuario nao pode ter mais de uma candidatura para a mesma vaga.
+
+## Regras de Negocio
+
+- O ID do usuario e extraido diretamente do JWT.
+- A candidatura e criada sempre com status inicial `PENDENTE`.
+- A data de candidatura e registrada automaticamente com o momento da criacao.
+
+## Fluxo Resumido
+
+1. Extrai o `userId` do JWT no header `Authorization`.
+2. Verifica se ja existe uma candidatura do usuario para a vaga — lanca `400` se sim.
+3. Verifica se a vaga existe no banco — lanca `400` se nao encontrada.
+4. Cria a candidatura com status `PENDENTE` e data atual.
+5. Retorna `201 Created` sem body.

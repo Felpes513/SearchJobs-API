@@ -7,6 +7,10 @@ title: Extrair Dados do Curriculo
 
 Extrai e estrutura os dados de um curriculo previamente enviado utilizando IA (OpenAI GPT). O texto do PDF e extraido via Apache PDFBox e enviado ao modelo GPT, que retorna um JSON estruturado com as informacoes do candidato. Alem disso, o perfil do usuario e automaticamente populado com os dados extraidos (skills, experiencias, certificacoes e projetos).
 
+:::info Pre-requisito
+O usuario precisa ter a **OpenAI API Key** configurada em `PUT /api/settings` antes de extrair o curriculo. Sem a chave, a API retorna `400` com mensagem orientando o usuario.
+:::
+
 ## Autenticacao
 
 - Necessita autenticacao: Sim
@@ -77,6 +81,20 @@ Os dados extraidos sao salvos diretamente no perfil do usuario. Os campos possiv
 
 Retornado quando o token JWT esta ausente ou invalido.
 
+`400 Bad Request`
+
+Retornado quando a OpenAI API Key nao esta configurada nas settings do usuario.
+
+```json
+{
+  "status": 400,
+  "erro": "Bad Request",
+  "mensagem": "Configure sua OpenAI API Key nas configuracoes antes de extrair o curriculo",
+  "path": "/api/resumes/1/extract",
+  "timestamp": "2024-01-15T10:30:00"
+}
+```
+
 `404 Not Found`
 
 Retornado quando nao existe curriculo com o ID informado.
@@ -105,15 +123,29 @@ Retornado quando ocorre erro de comunicacao com o servico OpenAI.
 }
 ```
 
+`502 Bad Gateway`
+
+Retornado quando a credencial da API OpenAI e invalida, ausente ou sem permissao.
+
+```json
+{
+  "status": 502,
+  "erro": "Bad Gateway",
+  "mensagem": "Servico de IA indisponivel: credencial da API invalida ou ausente.",
+  "path": "/api/resumes/1/extract",
+  "timestamp": "2024-01-15T10:30:00"
+}
+```
+
 `503 Service Unavailable`
 
-Retornado quando o servico OpenAI atinge o limite de requisicoes (rate limit).
+Retornado quando os creditos da API OpenAI estao esgotados ou o servico atinge o limite de requisicoes (rate limit).
 
 ```json
 {
   "status": 503,
   "erro": "Service Unavailable",
-  "mensagem": "Servico de IA temporariamente indisponivel. Tente novamente em alguns instantes.",
+  "mensagem": "Creditos da API de IA esgotados. Verifique o saldo da conta OpenAI.",
   "path": "/api/resumes/1/extract",
   "timestamp": "2024-01-15T10:30:00"
 }
@@ -121,18 +153,22 @@ Retornado quando o servico OpenAI atinge o limite de requisicoes (rate limit).
 
 ## Regras de Negocio
 
+- O usuario precisa ter a **OpenAI API Key** configurada nas settings (`PUT /api/settings`).
 - O curriculo precisa ter sido previamente enviado via `POST /api/resumes/upload`.
 - O texto e extraido do PDF usando Apache PDFBox.
 - O JSON gerado pela IA e persistido no campo `parsedJson` da tabela `resumes` (tipo JSONB no PostgreSQL).
 - Campos nao encontrados no curriculo aparecem na lista `camposFaltando` da resposta.
 - Os dados anteriores do perfil (skills, experiencias, certificacoes, projetos) sao limpos antes de salvar os novos dados extraidos.
 - O perfil base do usuario e recriado automaticamente apos a extracao.
+- Invalida automaticamente os caches de `GET /api/jobs/search` e `POST /api/jobs/match-all` do usuario, garantindo que as proximas chamadas reflitam o perfil atualizado.
 
 ## Fluxo Resumido
 
 1. Busca o curriculo pelo ID informado.
-2. Extrai o texto bruto do arquivo PDF via PDFBox.
-3. Envia o texto ao modelo GPT via OpenAI API.
-4. Persiste o texto extraido e o JSON estruturado no banco.
-5. Popula automaticamente o perfil do usuario com os dados extraidos (skills, experiencias, certificacoes, projetos).
-6. Retorna o resultado com os campos faltantes (se houver) e `200 OK`.
+2. Busca a OpenAI API Key do usuario nas settings — lanca `400` se ausente.
+3. Extrai o texto bruto do arquivo PDF via PDFBox.
+4. Envia o texto ao modelo GPT via OpenAI API (usando a chave do usuario).
+5. Persiste o texto extraido e o JSON estruturado no banco.
+6. Popula automaticamente o perfil do usuario com os dados extraidos (skills, experiencias, certificacoes, projetos).
+7. Invalida os caches de `jobs-search` e `jobs-match-all` do usuario.
+8. Retorna o resultado com os campos faltantes (se houver) e `200 OK`.

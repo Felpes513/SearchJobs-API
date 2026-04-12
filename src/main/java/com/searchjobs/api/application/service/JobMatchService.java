@@ -4,10 +4,13 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.searchjobs.api.application.dto.internal.JobMatchResultDto;
 import com.searchjobs.api.application.dto.response.JobMatchResponse;
+import com.searchjobs.api.domain.exception.MissingApiKeyException;
 import com.searchjobs.api.domain.model.*;
 import com.searchjobs.api.domain.port.in.JobMatchUseCase;
 import com.searchjobs.api.domain.port.out.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.AbstractMap;
@@ -23,11 +26,19 @@ public class JobMatchService implements JobMatchUseCase {
     private final UserSkillRepository userSkillRepository;
     private final UserExperienceRepository userExperienceRepository;
     private final UserProjectRepository userProjectRepository;
+    private final UserSettingsRepository userSettingsRepository;
     private final AiExtractionPort aiExtractionPort;
     private final ObjectMapper objectMapper;
 
     @Override
+    @Cacheable(value = "jobs-match-all", key = "#userId")
     public List<JobMatchResponse> matchAll(Long userId) {
+        String openAiKey = userSettingsRepository.findByUserId(userId)
+                .map(UserSettings::getOpenAiApiKey)
+                .filter(k -> k != null && !k.isBlank())
+                .orElseThrow(() -> new MissingApiKeyException(
+                        "Configure sua OpenAI API Key nas configurações antes de analisar vagas"));
+
         List<Job> allJobs = jobRepository.findAll();
 
         if (allJobs.isEmpty()) {
@@ -47,12 +58,17 @@ public class JobMatchService implements JobMatchUseCase {
         return filteredJobs.stream()
                 .map(job -> {
                     jobMatchRepository.deleteByUserIdAndJobId(userId, job.getId());
-                    JobMatchResultDto result = analyzeMatch(perfilTexto, job);
+                    JobMatchResultDto result = analyzeMatch(perfilTexto, job, openAiKey);
                     JobMatch match = saveMatch(userId, job.getId(), result);
                     return toResponse(match, job, result);
                 })
                 .sorted((a, b) -> Double.compare(b.getScore(), a.getScore()))
                 .toList();
+    }
+
+    @Override
+    @CacheEvict(value = "jobs-match-all", key = "#userId")
+    public void evictMatchAllCache(Long userId) {
     }
 
     @Override
@@ -150,7 +166,7 @@ public class JobMatchService implements JobMatchUseCase {
         return sb.toString();
     }
 
-    private JobMatchResultDto analyzeMatch(String perfilTexto, Job job) {
+    private JobMatchResultDto analyzeMatch(String perfilTexto, Job job, String openAiKey) {
         String prompt = """
                 Você é um especialista em recrutamento tech. Analise a compatibilidade entre o candidato e a vaga abaixo.
                 
@@ -184,7 +200,7 @@ public class JobMatchService implements JobMatchUseCase {
                         : "Não informado"
         );
 
-        String response = aiExtractionPort.extractResumeData(prompt)
+        String response = aiExtractionPort.extractResumeData(prompt, openAiKey)
                 .trim()
                 .replaceAll("```json", "")
                 .replaceAll("```", "")

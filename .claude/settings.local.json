@@ -12,7 +12,12 @@
       "Bash(xargs grep:*)",
       "Bash(./mvnw compile:*)",
       "Bash(mkdir -p \"D:/Projetos/Intellij/api/SearchJobsDocs/docs/jobs/match-all\")",
-      "Bash(mkdir -p \"D:/Projetos/Intellij/api/SearchJobsDocs/docs/jobs/matches\")"
+      "Bash(mkdir -p \"D:/Projetos/Intellij/api/SearchJobsDocs/docs/jobs/matches\")",
+      "Bash(cat D:/Projetos/Intellij/api/src/main/java/com/searchjobs/api/infrastructure/web/handler/*.java)",
+      "Bash(cat D:/Projetos/Intellij/api/SearchJobsDocs/docs/resumes/upload/*.mdx)",
+      "Bash(jar tf:*)",
+      "Bash(\"/c/Program Files/Java/jdk-21/bin/javap.exe\" -p /tmp/openai-core/com/openai/errors/OpenAIServiceException.class)",
+      "Bash(grep:*)"
     ]
   }
 }

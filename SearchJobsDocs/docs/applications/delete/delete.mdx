@@ -1,0 +1,90 @@
+---
+id: applications-delete
+title: Deletar Candidatura
+---
+
+## Descricao
+
+Remove permanentemente uma candidatura do usuario autenticado. A operacao nao pode ser desfeita.
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+## Request
+
+### Metodo e URL
+
+`DELETE /api/applications/{id}`
+
+### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+
+### Path Params
+
+| Parametro | Tipo | Obrigatorio | Descricao         |
+|-----------|------|-------------|-------------------|
+| id        | Long | Sim         | ID da candidatura |
+
+### Query Params
+
+Nenhum.
+
+### Body
+
+Nenhum.
+
+## Response
+
+### Sucesso
+
+Status: `204 No Content`
+
+Sem body de resposta.
+
+### Erros
+
+`400 Bad Request`
+
+Retornado quando a candidatura nao existe ou nao pertence ao usuario autenticado.
+
+```json
+{
+  "status": 400,
+  "erro": "Bad Request",
+  "mensagem": "Candidatura nao encontrada",
+  "path": "/api/applications/1",
+  "timestamp": "2025-04-10T14:00:00"
+}
+```
+
+`401 Unauthorized`
+
+Retornado quando o token JWT esta ausente ou invalido.
+
+```json
+{
+  "status": 401,
+  "erro": "Unauthorized",
+  "mensagem": "Token ausente ou invalido",
+  "path": "/api/applications/1",
+  "timestamp": "2025-04-10T14:00:00"
+}
+```
+
+## Regras de Negocio
+
+- O ID do usuario e extraido diretamente do JWT — usuarios so podem deletar suas proprias candidaturas.
+- A busca da candidatura e feita pelo `id` + `userId`, impedindo que um usuario delete candidaturas de outro.
+
+## Fluxo Resumido
+
+1. Extrai o `userId` do JWT no header `Authorization`.
+2. Busca a candidatura pelo `id` e `userId` — lanca `400` se nao encontrada.
+3. Deleta a candidatura do banco.
+4. Retorna `204 No Content`.
