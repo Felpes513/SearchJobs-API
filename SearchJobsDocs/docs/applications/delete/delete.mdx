@@ -43,9 +43,14 @@ Nenhum.
 
 ### Sucesso
 
-Status: `204 No Content`
+Status: `200 OK`
 
-Sem body de resposta.
+```json
+{
+  "success": true,
+  "message": "Candidatura removida com sucesso"
+}
+```
 
 ### Erros
 
@@ -55,11 +60,8 @@ Retornado quando a candidatura nao existe ou nao pertence ao usuario autenticado
 
 ```json
 {
-  "status": 400,
-  "erro": "Bad Request",
-  "mensagem": "Candidatura nao encontrada",
-  "path": "/api/applications/1",
-  "timestamp": "2025-04-10T14:00:00"
+  "success": false,
+  "message": "Candidatura nao encontrada"
 }
 ```
 
@@ -69,11 +71,8 @@ Retornado quando o token JWT esta ausente ou invalido.
 
 ```json
 {
-  "status": 401,
-  "erro": "Unauthorized",
-  "mensagem": "Token ausente ou invalido",
-  "path": "/api/applications/1",
-  "timestamp": "2025-04-10T14:00:00"
+  "success": false,
+  "message": "Token ausente ou invalido"
 }
 ```
 
@@ -87,4 +86,4 @@ Retornado quando o token JWT esta ausente ou invalido.
 1. Extrai o `userId` do JWT no header `Authorization`.
 2. Busca a candidatura pelo `id` e `userId` — lanca `400` se nao encontrada.
 3. Deleta a candidatura do banco.
-4. Retorna `204 No Content`.
+4. Retorna `200 OK` com mensagem de confirmacao.

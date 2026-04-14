@@ -13,13 +13,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.validation.FieldError;
-import com.searchjobs.api.infrastructure.web.handler.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,121 +25,105 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleEmailAlreadyExists(
+    public ResponseEntity<ApiResponse<?>> handleEmailAlreadyExists(
             EmailAlreadyExistsException ex, HttpServletRequest request) {
-        return build(HttpStatus.CONFLICT, ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(ApiResponse.fail(ex.getMessage()));
     }
 
     @ExceptionHandler(ResumeNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResumeNotFound(
+    public ResponseEntity<ApiResponse<?>> handleResumeNotFound(
             ResumeNotFoundException ex, HttpServletRequest request) {
-        return build(HttpStatus.NOT_FOUND, ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail(ex.getMessage()));
     }
 
     @ExceptionHandler(MissingApiKeyException.class)
-    public ResponseEntity<ErrorResponse> handleMissingApiKey(
+    public ResponseEntity<ApiResponse<?>> handleMissingApiKey(
             MissingApiKeyException ex, HttpServletRequest request) {
-        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.fail(ex.getMessage()));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ErrorResponse> handleBadCredentials(
+    public ResponseEntity<ApiResponse<?>> handleBadCredentials(
             BadCredentialsException ex, HttpServletRequest request) {
-        return build(HttpStatus.UNAUTHORIZED, "Email ou senha inválidos", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.fail("Email ou senha inválidos"));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidation(
+    public ResponseEntity<ApiResponse<?>> handleValidation(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
-        Map<String, String> campos = new HashMap<>();
+        Map<String, String> errors = new HashMap<>();
         for (FieldError error : ex.getBindingResult().getFieldErrors()) {
-            campos.put(error.getField(), error.getDefaultMessage());
+            errors.put(error.getField(), error.getDefaultMessage());
         }
-        return buildValidation(request.getRequestURI(), campos);
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(ApiResponse.validationFail("Erro de validação nos campos", errors));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ErrorResponse> handleIllegalArgument(
+    public ResponseEntity<ApiResponse<?>> handleIllegalArgument(
             IllegalArgumentException ex, HttpServletRequest request) {
-        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.fail(ex.getMessage()));
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<ErrorResponse> handleMaxUploadSize(
+    public ResponseEntity<ApiResponse<?>> handleMaxUploadSize(
             MaxUploadSizeExceededException ex, HttpServletRequest request) {
-        return build(HttpStatus.PAYLOAD_TOO_LARGE, "Arquivo muito grande. Tamanho máximo permitido: 10MB", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(ApiResponse.fail("Arquivo muito grande. Tamanho máximo permitido: 10MB"));
     }
 
     @ExceptionHandler(UnauthorizedException.class)
-    public ResponseEntity<ErrorResponse> handleOpenAiUnauthorized(
+    public ResponseEntity<ApiResponse<?>> handleOpenAiUnauthorized(
             UnauthorizedException ex, HttpServletRequest request) {
-        return build(HttpStatus.BAD_GATEWAY, "Serviço de IA indisponível: credencial da API inválida ou ausente.", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(ApiResponse.fail("Serviço de IA indisponível: credencial da API inválida ou ausente."));
     }
 
     @ExceptionHandler(PermissionDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleOpenAiPermission(
+    public ResponseEntity<ApiResponse<?>> handleOpenAiPermission(
             PermissionDeniedException ex, HttpServletRequest request) {
-        return build(HttpStatus.BAD_GATEWAY, "Serviço de IA indisponível: sem permissão para acessar o recurso solicitado.", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(ApiResponse.fail("Serviço de IA indisponível: sem permissão para acessar o recurso solicitado."));
     }
 
     @ExceptionHandler(RateLimitException.class)
-    public ResponseEntity<ErrorResponse> handleRateLimit(
+    public ResponseEntity<ApiResponse<?>> handleRateLimit(
             RateLimitException ex, HttpServletRequest request) {
         boolean isQuotaExceeded = ex.code()
                 .map(code -> code.equals("insufficient_quota"))
                 .orElse(false);
         if (isQuotaExceeded) {
-            return build(HttpStatus.SERVICE_UNAVAILABLE, "Créditos da API de IA esgotados. Verifique o saldo da conta OpenAI.", request.getRequestURI());
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                    .body(ApiResponse.fail("Créditos da API de IA esgotados. Verifique o saldo da conta OpenAI."));
         }
-        return build(HttpStatus.SERVICE_UNAVAILABLE, "Serviço de IA temporariamente indisponível. Tente novamente em alguns instantes.", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ApiResponse.fail("Serviço de IA temporariamente indisponível. Tente novamente em alguns instantes."));
     }
 
     @ExceptionHandler(UnprocessableEntityException.class)
-    public ResponseEntity<ErrorResponse> handleOpenAiUnprocessable(
+    public ResponseEntity<ApiResponse<?>> handleOpenAiUnprocessable(
             UnprocessableEntityException ex, HttpServletRequest request) {
-        return build(HttpStatus.BAD_GATEWAY, "O serviço de IA não conseguiu processar a requisição. Tente novamente.", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(ApiResponse.fail("O serviço de IA não conseguiu processar a requisição. Tente novamente."));
     }
 
     @ExceptionHandler(OpenAIException.class)
-    public ResponseEntity<ErrorResponse> handleOpenAi(
+    public ResponseEntity<ApiResponse<?>> handleOpenAi(
             OpenAIException ex, HttpServletRequest request) {
-        return build(HttpStatus.BAD_GATEWAY, "Erro ao comunicar com o serviço de IA", request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(ApiResponse.fail("Erro ao comunicar com o serviço de IA"));
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ErrorResponse> handleRuntime(
+    public ResponseEntity<ApiResponse<?>> handleRuntime(
             RuntimeException ex, HttpServletRequest request) {
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.fail(ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneric(
+    public ResponseEntity<ApiResponse<?>> handleGeneric(
             Exception ex, HttpServletRequest request) {
-        return build(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno no servidor", request.getRequestURI());
-    }
-
-    private ResponseEntity<ErrorResponse> build(HttpStatus status, String mensagem, String path) {
-        return ResponseEntity.status(status).body(
-                ErrorResponse.builder()
-                        .status(status.value())
-                        .erro(status.getReasonPhrase())
-                        .mensagem(mensagem)
-                        .path(path)
-                        .timestamp(LocalDateTime.now())
-                        .build()
-        );
-    }
-
-    private ResponseEntity<ErrorResponse> buildValidation(String path, Map<String, String> campos) {
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(
-                ErrorResponse.builder()
-                        .status(422)
-                        .erro("Validation Error")
-                        .mensagem("Erro de validação nos campos")
-                        .campos(campos)
-                        .path(path)
-                        .timestamp(LocalDateTime.now())
-                        .build()
-        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.fail("Erro interno no servidor"));
     }
 }

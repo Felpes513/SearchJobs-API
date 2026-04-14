@@ -70,7 +70,12 @@ Nenhum.
 
 Status: `200 OK`
 
-Sem body de resposta.
+```json
+{
+  "success": true,
+  "message": "Status da candidatura atualizado com sucesso"
+}
+```
 
 ### Erros
 
@@ -80,21 +85,15 @@ Retornado quando o status informado nao e um valor valido ou a candidatura nao p
 
 ```json
 {
-  "status": 400,
-  "erro": "Bad Request",
-  "mensagem": "Candidatura nao encontrada",
-  "path": "/api/applications/1/status",
-  "timestamp": "2025-04-10T14:00:00"
+  "success": false,
+  "message": "Candidatura nao encontrada"
 }
 ```
 
 ```json
 {
-  "status": 400,
-  "erro": "Bad Request",
-  "mensagem": "Status invalido: OUTRO_STATUS",
-  "path": "/api/applications/1/status",
-  "timestamp": "2025-04-10T14:00:00"
+  "success": false,
+  "message": "Status invalido: OUTRO_STATUS"
 }
 ```
 
@@ -104,11 +103,8 @@ Retornado quando o token JWT esta ausente ou invalido.
 
 ```json
 {
-  "status": 401,
-  "erro": "Unauthorized",
-  "mensagem": "Token ausente ou invalido",
-  "path": "/api/applications/1/status",
-  "timestamp": "2025-04-10T14:00:00"
+  "success": false,
+  "message": "Token ausente ou invalido"
 }
 ```
 
@@ -118,14 +114,11 @@ Retornado quando o campo `status` nao e informado no body.
 
 ```json
 {
-  "status": 422,
-  "erro": "Validation Error",
-  "mensagem": "Erro de validacao nos campos",
-  "campos": {
+  "success": false,
+  "message": "Erro de validacao nos campos",
+  "errors": {
     "status": "Status e obrigatorio"
-  },
-  "path": "/api/applications/1/status",
-  "timestamp": "2025-04-10T14:00:00"
+  }
 }
 ```
 
@@ -146,4 +139,4 @@ Retornado quando o campo `status` nao e informado no body.
 2. Busca a candidatura pelo `id` e `userId` — lanca `400` se nao encontrada.
 3. Valida se o `status` informado e um valor aceito — lanca `400` se invalido.
 4. Atualiza o status da candidatura no banco.
-5. Retorna `200 OK` sem body.
+5. Retorna `200 OK` com mensagem de confirmacao.

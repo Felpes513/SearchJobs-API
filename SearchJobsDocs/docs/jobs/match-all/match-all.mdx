@@ -62,38 +62,28 @@ Nenhum.
 
 Status: `200 OK`
 
-Retorna a lista de matches ordenada por score decrescente (melhor compatibilidade primeiro).
-
 ```json
-[
-  {
-    "jobId": 1,
-    "titulo": "Backend Developer - Java",
-    "empresa": "Tech Corp",
-    "localizacao": "Sao Paulo, SP",
-    "modeloTrabalho": "Remote",
-    "jobUrl": "https://www.linkedin.com/jobs/view/abc123",
-    "score": 87.5,
-    "justificativa": "O candidato possui experiencia solida em Java e Spring Boot, que sao os principais requisitos da vaga. As skills de PostgreSQL e Docker tambem estao alinhadas com o stack da empresa.",
-    "pontosFortres": ["Java", "Spring Boot", "PostgreSQL"],
-    "gaps": ["Kubernetes", "AWS"]
-  },
-  {
-    "jobId": 2,
-    "titulo": "Java Software Engineer",
-    "empresa": "Startup X",
-    "localizacao": "Remoto",
-    "modeloTrabalho": "Remote",
-    "jobUrl": "https://www.indeed.com/viewjob?jk=def456",
-    "score": 62.0,
-    "justificativa": "O candidato atende os requisitos basicos de Java, mas a vaga exige experiencia com microservicos e mensageria que nao estao presentes no perfil.",
-    "pontosFortres": ["Java", "REST APIs"],
-    "gaps": ["Kafka", "Microservices", "Kubernetes"]
-  }
-]
+{
+  "success": true,
+  "message": "Matching realizado com sucesso",
+  "data": [
+    {
+      "jobId": 1,
+      "titulo": "Backend Developer - Java",
+      "empresa": "Tech Corp",
+      "localizacao": "Sao Paulo, SP",
+      "modeloTrabalho": "Remote",
+      "jobUrl": "https://www.linkedin.com/jobs/view/abc123",
+      "score": 87.5,
+      "justificativa": "O candidato possui experiencia solida em Java e Spring Boot.",
+      "pontosFortres": ["Java", "Spring Boot", "PostgreSQL"],
+      "gaps": ["Kubernetes", "AWS"]
+    }
+  ]
+}
 ```
 
-### Campos da Resposta
+### Campos de `data`
 
 | Campo          | Tipo         | Descricao                                                        |
 |----------------|--------------|------------------------------------------------------------------|
@@ -119,32 +109,46 @@ Retorna a lista de matches ordenada por score decrescente (melhor compatibilidad
 
 ### Erros
 
-| Status | Descricao |
-|--------|-----------|
-| `400 Bad Request` | OpenAI API Key ausente nas settings, ou nenhuma vaga encontrada no banco. |
-| `401 Unauthorized` | Token JWT ausente ou invalido. |
-| `502 Bad Gateway` | Credencial da API de IA invalida ou sem permissao de acesso. |
-| `503 Service Unavailable` | Creditos da API de IA esgotados ou servico temporariamente indisponivel. |
-
-Exemplos de erro `400`:
+`400 Bad Request`
 
 ```json
 {
-  "status": 400,
-  "erro": "Bad Request",
-  "mensagem": "Configure sua OpenAI API Key nas configuracoes antes de analisar vagas",
-  "path": "/api/jobs/match-all",
-  "timestamp": "2025-04-10T14:00:00"
+  "success": false,
+  "message": "Configure sua OpenAI API Key nas configuracoes antes de analisar vagas"
 }
 ```
 
 ```json
 {
-  "status": 400,
-  "erro": "Bad Request",
-  "mensagem": "Nenhuma vaga encontrada. Faca uma busca de vagas primeiro.",
-  "path": "/api/jobs/match-all",
-  "timestamp": "2025-04-10T14:00:00"
+  "success": false,
+  "message": "Nenhuma vaga encontrada. Faca uma busca de vagas primeiro."
+}
+```
+
+`401 Unauthorized`
+
+```json
+{
+  "success": false,
+  "message": "Token ausente ou invalido"
+}
+```
+
+`502 Bad Gateway`
+
+```json
+{
+  "success": false,
+  "message": "Servico de IA indisponivel: credencial da API invalida ou ausente."
+}
+```
+
+`503 Service Unavailable`
+
+```json
+{
+  "success": false,
+  "message": "Creditos da API de IA esgotados. Verifique o saldo da conta OpenAI."
 }
 ```
 
@@ -153,10 +157,10 @@ Exemplos de erro `400`:
 - O usuario precisa ter a **OpenAI API Key** configurada em `PUT /api/settings`.
 - O perfil do candidato enviado a IA inclui: cargo desejado, resumo profissional, skills, experiencias e projetos.
 - Se o usuario nao tiver skills cadastradas, as primeiras 15 vagas sao selecionadas sem filtragem.
-- Se houver skills, as vagas sao pre-filtradas por correspondencia textual com titulo, descricao e requisitos, priorizando as com mais matches.
+- Se houver skills, as vagas sao pre-filtradas por correspondencia textual com titulo, descricao e requisitos.
 - Matches anteriores da mesma vaga para o mesmo usuario sao deletados antes de salvar o novo resultado.
 - Resultados sao retornados ordenados por score (maior para menor).
-- O resultado e armazenado em cache por 10 minutos por usuario (maximo de 100 usuarios em cache simultaneamente).
+- O resultado e armazenado em cache por 10 minutos por usuario.
 - O cache e invalidado automaticamente apos extracao de curriculo.
 
 ## Fluxo Resumido
@@ -165,10 +169,7 @@ Exemplos de erro `400`:
 2. Busca a OpenAI API Key do usuario nas settings — lanca `400` se ausente.
 3. Busca todas as vagas no banco — lanca `400` se nao houver nenhuma.
 4. Busca as skills do usuario.
-5. Pre-filtra ate 15 vagas com maior correspondencia de skills (ou as 15 primeiras, se sem skills).
+5. Pre-filtra ate 15 vagas com maior correspondencia de skills.
 6. Monta o texto de perfil do usuario (cargo, resumo, skills, experiencias, projetos).
-7. Para cada vaga filtrada:
-   a. Deleta o match anterior (se existir).
-   b. Envia perfil + vaga ao GPT (usando a chave do usuario) e recebe score, justificativa, pontosFortres e gaps.
-   c. Salva o resultado como `JobMatch` no banco.
-8. Retorna a lista de matches ordenada por score com `200 OK`.
+7. Para cada vaga filtrada, envia perfil + vaga ao GPT e salva o resultado.
+8. Retorna a lista de matches ordenada por score dentro do envelope `ApiResponse` com `200 OK`.

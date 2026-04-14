@@ -43,23 +43,23 @@ Nenhum.
 
 ### Sucesso
 
-Status: `204 No Content`
+Status: `200 OK`
 
-Sem body de retorno.
+```json
+{
+  "success": true,
+  "message": "Curriculo removido com sucesso"
+}
+```
 
 ### Erros
 
 `401 Unauthorized`
 
-Retornado quando o token JWT esta ausente ou invalido.
-
 ```json
 {
-  "status": 401,
-  "erro": "Unauthorized",
-  "mensagem": "Token ausente ou invalido",
-  "path": "/api/resumes/1",
-  "timestamp": "2024-01-15T10:30:00"
+  "success": false,
+  "message": "Token ausente ou invalido"
 }
 ```
 
@@ -69,11 +69,8 @@ Retornado quando o curriculo nao existe ou nao pertence ao usuario autenticado.
 
 ```json
 {
-  "status": 404,
-  "erro": "Not Found",
-  "mensagem": "Curriculo nao encontrado com id: 99",
-  "path": "/api/resumes/99",
-  "timestamp": "2024-01-15T10:30:00"
+  "success": false,
+  "message": "Curriculo nao encontrado com id: 99"
 }
 ```
 
@@ -90,4 +87,4 @@ Retornado quando o curriculo nao existe ou nao pertence ao usuario autenticado.
 3. Valida que o curriculo pertence ao usuario autenticado.
 4. Remove o arquivo PDF do disco.
 5. Remove o registro da tabela `resumes`.
-6. Retorna `204 No Content`.
+6. Retorna `200 OK` com mensagem de confirmacao.

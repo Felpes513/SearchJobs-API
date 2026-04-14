@@ -47,13 +47,17 @@ Status: `200 OK`
 
 ```json
 {
-  "id": 1,
-  "resumoProfissional": "Desenvolvedor backend com foco em Java e Spring Boot.",
-  "cargoDesejado": "Desenvolvedor Backend",
-  "cidade": "Sao Paulo",
-  "estado": "SP",
-  "linkedinUrl": "https://linkedin.com/in/usuario",
-  "githubUrl": "https://github.com/usuario"
+  "success": true,
+  "message": "Perfil obtido com sucesso",
+  "data": {
+    "id": 1,
+    "resumoProfissional": "Desenvolvedor backend com foco em Java e Spring Boot.",
+    "cargoDesejado": "Desenvolvedor Backend",
+    "cidade": "Sao Paulo",
+    "estado": "SP",
+    "linkedinUrl": "https://linkedin.com/in/usuario",
+    "githubUrl": "https://github.com/usuario"
+  }
 }
 ```
 
@@ -61,7 +65,12 @@ Status: `200 OK`
 
 `401 Unauthorized`
 
-Retornado quando o token JWT esta ausente ou invalido.
+```json
+{
+  "success": false,
+  "message": "Token ausente ou invalido"
+}
+```
 
 ---
 
@@ -112,13 +121,17 @@ Status: `200 OK`
 
 ```json
 {
-  "id": 1,
-  "resumoProfissional": "Desenvolvedor backend com foco em Java e Spring Boot.",
-  "cargoDesejado": "Desenvolvedor Backend",
-  "cidade": "Sao Paulo",
-  "estado": "SP",
-  "linkedinUrl": "https://linkedin.com/in/usuario",
-  "githubUrl": "https://github.com/usuario"
+  "success": true,
+  "message": "Perfil atualizado com sucesso",
+  "data": {
+    "id": 1,
+    "resumoProfissional": "Desenvolvedor backend com foco em Java e Spring Boot.",
+    "cargoDesejado": "Desenvolvedor Backend",
+    "cidade": "Sao Paulo",
+    "estado": "SP",
+    "linkedinUrl": "https://linkedin.com/in/usuario",
+    "githubUrl": "https://github.com/usuario"
+  }
 }
 ```
 
@@ -126,7 +139,12 @@ Status: `200 OK`
 
 `401 Unauthorized`
 
-Retornado quando o token JWT esta ausente ou invalido.
+```json
+{
+  "success": false,
+  "message": "Token ausente ou invalido"
+}
+```
 
 ## Regras de Negocio
 
@@ -138,4 +156,4 @@ Retornado quando o token JWT esta ausente ou invalido.
 1. Extrai o `userId` do JWT no header `Authorization`.
 2. Busca o perfil existente do usuario.
 3. Atualiza os campos recebidos no body.
-4. Persiste e retorna o perfil atualizado com `200 OK`.
+4. Persiste e retorna o perfil atualizado dentro do envelope `ApiResponse` com `200 OK`.

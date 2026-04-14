@@ -1,0 +1,76 @@
+---
+id: notifications-mark-read
+title: Marcar Notificação como Lida
+---
+
+## Descricao
+
+Marca uma notificacao especifica como lida, definindo o campo `lida` como `true`. Se a notificacao nao existir, a operacao e silenciosa e retorna `200 OK` sem erro.
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+## Request
+
+### Metodo e URL
+
+`PATCH /api/notifications/{id}/read`
+
+### Path Params
+
+| Param | Tipo | Obrigatorio | Descricao              |
+|-------|------|-------------|------------------------|
+| id    | Long | Sim         | ID da notificacao      |
+
+### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+
+### Query Params
+
+Nenhum.
+
+### Body
+
+Nenhum.
+
+## Response
+
+### Sucesso
+
+Status: `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "Notificacao marcada como lida"
+}
+```
+
+### Erros
+
+`401 Unauthorized`
+
+```json
+{
+  "success": false,
+  "message": "Token ausente ou invalido"
+}
+```
+
+## Regras de Negocio
+
+- Se a notificacao nao for encontrada pelo `id`, a operacao e ignorada silenciosamente — nenhum erro e lancado.
+- Nao ha validacao de propriedade: qualquer usuario autenticado pode marcar qualquer notificacao como lida pelo `id`.
+
+## Fluxo Resumido
+
+1. Recebe o `id` da notificacao no path.
+2. Busca a notificacao no banco.
+3. Se encontrada, define `lida = true` e persiste.
+4. Retorna `200 OK` com mensagem de confirmacao independente de a notificacao ter sido encontrada ou nao.

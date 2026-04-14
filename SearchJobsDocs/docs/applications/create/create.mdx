@@ -52,7 +52,12 @@ Nenhum.
 
 Status: `201 Created`
 
-Sem body de resposta.
+```json
+{
+  "success": true,
+  "message": "Candidatura registrada com sucesso"
+}
+```
 
 ### Erros
 
@@ -62,11 +67,8 @@ Retornado quando a vaga nao existe ou o usuario ja possui uma candidatura ativa 
 
 ```json
 {
-  "status": 400,
-  "erro": "Bad Request",
-  "mensagem": "Voce ja se candidatou a esta vaga",
-  "path": "/api/applications",
-  "timestamp": "2025-04-10T14:00:00"
+  "success": false,
+  "message": "Voce ja se candidatou a esta vaga"
 }
 ```
 
@@ -76,11 +78,8 @@ Retornado quando o token JWT esta ausente ou invalido.
 
 ```json
 {
-  "status": 401,
-  "erro": "Unauthorized",
-  "mensagem": "Token ausente ou invalido",
-  "path": "/api/applications",
-  "timestamp": "2025-04-10T14:00:00"
+  "success": false,
+  "message": "Token ausente ou invalido"
 }
 ```
 
@@ -90,14 +89,11 @@ Retornado quando campos obrigatorios nao sao informados.
 
 ```json
 {
-  "status": 422,
-  "erro": "Validation Error",
-  "mensagem": "Erro de validacao nos campos",
-  "campos": {
+  "success": false,
+  "message": "Erro de validacao nos campos",
+  "errors": {
     "jobId": "jobId e obrigatorio"
-  },
-  "path": "/api/applications",
-  "timestamp": "2025-04-10T14:00:00"
+  }
 }
 ```
 
@@ -119,4 +115,4 @@ Retornado quando campos obrigatorios nao sao informados.
 2. Verifica se ja existe uma candidatura do usuario para a vaga — lanca `400` se sim.
 3. Verifica se a vaga existe no banco — lanca `400` se nao encontrada.
 4. Cria a candidatura com status `PENDENTE` e data atual.
-5. Retorna `201 Created` sem body.
+5. Retorna `201 Created` com mensagem de confirmacao.

@@ -46,23 +46,32 @@ Nenhum.
 Status: `200 OK`
 
 ```json
-[
-  {
-    "id": 1,
-    "cargo": "Desenvolvedor Backend",
-    "empresa": "Empresa XYZ",
-    "descricao": "Desenvolvimento de APIs REST com Java e Spring Boot.",
-    "dataInicio": "2022-01",
-    "dataFim": "2024-01"
-  }
-]
+{
+  "success": true,
+  "message": "Experiencias obtidas com sucesso",
+  "data": [
+    {
+      "id": 1,
+      "cargo": "Desenvolvedor Backend",
+      "empresa": "Empresa XYZ",
+      "descricao": "Desenvolvimento de APIs REST com Java e Spring Boot.",
+      "dataInicio": "2022-01",
+      "dataFim": "2024-01"
+    }
+  ]
+}
 ```
 
 #### Erros
 
 `401 Unauthorized`
 
-Retornado quando o token JWT esta ausente ou invalido.
+```json
+{
+  "success": false,
+  "message": "Token ausente ou invalido"
+}
+```
 
 ---
 
@@ -114,23 +123,32 @@ Substitui completamente as experiencias profissionais do usuario autenticado pel
 Status: `200 OK`
 
 ```json
-[
-  {
-    "id": 2,
-    "cargo": "Desenvolvedor Backend",
-    "empresa": "Empresa XYZ",
-    "descricao": "Desenvolvimento de APIs REST com Java e Spring Boot.",
-    "dataInicio": "2022-01",
-    "dataFim": "2024-01"
-  }
-]
+{
+  "success": true,
+  "message": "Experiencias atualizadas com sucesso",
+  "data": [
+    {
+      "id": 2,
+      "cargo": "Desenvolvedor Backend",
+      "empresa": "Empresa XYZ",
+      "descricao": "Desenvolvimento de APIs REST com Java e Spring Boot.",
+      "dataInicio": "2022-01",
+      "dataFim": "2024-01"
+    }
+  ]
+}
 ```
 
 #### Erros
 
 `401 Unauthorized`
 
-Retornado quando o token JWT esta ausente ou invalido.
+```json
+{
+  "success": false,
+  "message": "Token ausente ou invalido"
+}
+```
 
 ## Regras de Negocio
 
@@ -143,4 +161,4 @@ Retornado quando o token JWT esta ausente ou invalido.
 1. Extrai o `userId` do JWT no header `Authorization`.
 2. Deleta todas as experiencias existentes do usuario.
 3. Persiste as novas experiencias.
-4. Retorna a lista atualizada com `200 OK`.
+4. Retorna a lista atualizada dentro do envelope `ApiResponse` com `200 OK`.

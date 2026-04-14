@@ -58,102 +58,75 @@ Nenhum.
 
 Status: `200 OK`
 
-Retorna uma lista de vagas ordenadas por relevancia para o usuario (com base nas suas skills).
-
 ```json
-[
-  {
-    "id": 1,
-    "externalId": "abc123xyz",
-    "titulo": "Backend Developer - Java",
-    "empresa": "Tech Corp",
-    "localizacao": "Sao Paulo, SP",
-    "modeloTrabalho": "Remote",
-    "senioridade": "Mid-Senior level",
-    "descricao": "Estamos procurando um desenvolvedor Java com experiencia em Spring Boot...",
-    "salario": "R$ 8.000 - R$ 12.000",
-    "jobUrl": "https://www.linkedin.com/jobs/view/abc123",
-    "dataPublicacao": "2025-04-01"
-  },
-  {
-    "id": 2,
-    "externalId": "def456uvw",
-    "titulo": "Java Software Engineer",
-    "empresa": "Startup X",
-    "localizacao": "Remoto",
-    "modeloTrabalho": "Remote",
-    "senioridade": "Senior level",
-    "descricao": "Vaga para engenheiro de software com foco em microservicos...",
-    "salario": null,
-    "jobUrl": "https://www.indeed.com/viewjob?jk=def456",
-    "dataPublicacao": "2025-04-02"
-  }
-]
+{
+  "success": true,
+  "message": "Vagas encontradas com sucesso",
+  "data": [
+    {
+      "id": 1,
+      "externalId": "abc123xyz",
+      "titulo": "Backend Developer - Java",
+      "empresa": "Tech Corp",
+      "localizacao": "Sao Paulo, SP",
+      "modeloTrabalho": "Remote",
+      "senioridade": "Mid-Senior level",
+      "descricao": "Estamos procurando um desenvolvedor Java com experiencia em Spring Boot...",
+      "salario": "R$ 8.000 - R$ 12.000",
+      "jobUrl": "https://www.linkedin.com/jobs/view/abc123",
+      "dataPublicacao": "2025-04-01"
+    }
+  ]
+}
 ```
 
-### Campos da Resposta
+### Campos de `data`
 
-| Campo          | Tipo   | Descricao                                          |
-|----------------|--------|----------------------------------------------------|
-| id             | Long   | ID interno da vaga no banco de dados               |
-| externalId     | String | ID da vaga na API externa (JSearch)                |
-| titulo         | String | Titulo da vaga                                     |
-| empresa        | String | Nome da empresa                                    |
-| localizacao    | String | Localizacao da vaga                                |
-| modeloTrabalho | String | Modelo de trabalho (Remote, Hybrid, On-site)       |
-| senioridade    | String | Nivel de senioridade exigido                       |
-| descricao      | String | Descricao completa da vaga                         |
-| salario        | String | Faixa salarial (pode ser null)                     |
-| jobUrl         | String | Link para a vaga original                          |
+| Campo          | Tipo   | Descricao                                           |
+|----------------|--------|-----------------------------------------------------|
+| id             | Long   | ID interno da vaga no banco de dados                |
+| externalId     | String | ID da vaga na API externa (JSearch)                 |
+| titulo         | String | Titulo da vaga                                      |
+| empresa        | String | Nome da empresa                                     |
+| localizacao    | String | Localizacao da vaga                                 |
+| modeloTrabalho | String | Modelo de trabalho (Remote, Hybrid, On-site)        |
+| senioridade    | String | Nivel de senioridade exigido                        |
+| descricao      | String | Descricao completa da vaga                          |
+| salario        | String | Faixa salarial (pode ser null)                      |
+| jobUrl         | String | Link para a vaga original                           |
 | dataPublicacao | String | Data de publicacao da vaga (formato ISO: YYYY-MM-DD)|
 
 ### Erros
 
 `400 Bad Request`
 
-Retornado em tres situacoes distintas: API Key ausente nas settings ou cargo desejado nao preenchido.
-
 ```json
 {
-  "status": 400,
-  "erro": "Bad Request",
-  "mensagem": "Configure sua JSearch API Key nas configuracoes antes de buscar vagas",
-  "path": "/api/jobs/search",
-  "timestamp": "2025-04-09T10:30:00"
+  "success": false,
+  "message": "Configure sua JSearch API Key nas configuracoes antes de buscar vagas"
 }
 ```
 
 ```json
 {
-  "status": 400,
-  "erro": "Bad Request",
-  "mensagem": "Configure sua OpenAI API Key nas configuracoes antes de buscar vagas",
-  "path": "/api/jobs/search",
-  "timestamp": "2025-04-09T10:30:00"
+  "success": false,
+  "message": "Configure sua OpenAI API Key nas configuracoes antes de buscar vagas"
 }
 ```
 
 ```json
 {
-  "status": 400,
-  "erro": "Bad Request",
-  "mensagem": "Configure seu cargo desejado no perfil antes de buscar vagas",
-  "path": "/api/jobs/search",
-  "timestamp": "2025-04-09T10:30:00"
+  "success": false,
+  "message": "Configure seu cargo desejado no perfil antes de buscar vagas"
 }
 ```
 
 `401 Unauthorized`
 
-Retornado quando o token JWT esta ausente ou invalido.
-
 ```json
 {
-  "status": 401,
-  "erro": "Unauthorized",
-  "mensagem": "Token ausente ou invalido",
-  "path": "/api/jobs/search",
-  "timestamp": "2025-04-09T10:30:00"
+  "success": false,
+  "message": "Token ausente ou invalido"
 }
 ```
 
@@ -161,9 +134,23 @@ Retornado quando o token JWT esta ausente ou invalido.
 
 Retornado quando a credencial da API OpenAI e invalida ou sem permissao.
 
+```json
+{
+  "success": false,
+  "message": "Servico de IA indisponivel: credencial da API invalida ou ausente."
+}
+```
+
 `503 Service Unavailable`
 
 Retornado quando os creditos da API OpenAI estao esgotados ou ha rate limit.
+
+```json
+{
+  "success": false,
+  "message": "Creditos da API de IA esgotados. Verifique o saldo da conta OpenAI."
+}
+```
 
 ## Regras de Negocio
 
@@ -187,4 +174,4 @@ Retornado quando os creditos da API OpenAI estao esgotados ou ha rate limit.
 7. Salva as vagas retornadas no banco de dados.
 8. Envia as vagas e as skills ao GPT (usando a chave OpenAI do usuario) para rankeamento por relevancia.
 9. Armazena o resultado em cache por 10 minutos.
-10. Retorna a lista de vagas ordenada com `200 OK`.
+10. Retorna a lista de vagas ordenada dentro do envelope `ApiResponse` com `200 OK`.

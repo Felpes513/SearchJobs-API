@@ -39,38 +39,40 @@ Nenhum.
 
 Status: `200 OK`
 
-Retorna um objeto com uma lista de candidaturas para cada coluna do Kanban.
-
 ```json
 {
-  "pendente": [
-    {
-      "id": 1,
-      "jobId": 10,
-      "titulo": "Backend Developer - Java",
-      "empresa": "Tech Corp",
-      "localizacao": "Sao Paulo, SP",
-      "modeloTrabalho": "Remote",
-      "jobUrl": "https://www.linkedin.com/jobs/view/abc123",
-      "status": "PENDENTE",
-      "observacao": "Vaga interessante, aguardar feedback",
-      "dataCandidatura": "2025-04-10T14:00:00"
-    }
-  ],
-  "salva": [],
-  "emFila": [],
-  "candidatado": [],
-  "emAnalise": [],
-  "entrevista": [],
-  "aprovado": [],
-  "rejeitado": [],
-  "ignorado": []
+  "success": true,
+  "message": "Kanban de candidaturas obtido com sucesso",
+  "data": {
+    "pendente": [
+      {
+        "id": 1,
+        "jobId": 10,
+        "titulo": "Backend Developer - Java",
+        "empresa": "Tech Corp",
+        "localizacao": "Sao Paulo, SP",
+        "modeloTrabalho": "Remote",
+        "jobUrl": "https://www.linkedin.com/jobs/view/abc123",
+        "status": "PENDENTE",
+        "observacao": "Vaga interessante, aguardar feedback",
+        "dataCandidatura": "2025-04-10T14:00:00"
+      }
+    ],
+    "salva": [],
+    "emFila": [],
+    "candidatado": [],
+    "emAnalise": [],
+    "entrevista": [],
+    "aprovado": [],
+    "rejeitado": [],
+    "ignorado": []
+  }
 }
 ```
 
 ### Campos da Resposta
 
-**Envelope Kanban**
+**Envelope Kanban (`data`)**
 
 | Campo        | Tipo  | Descricao                                                  |
 |--------------|-------|------------------------------------------------------------|
@@ -107,11 +109,8 @@ Retornado quando o token JWT esta ausente ou invalido.
 
 ```json
 {
-  "status": 401,
-  "erro": "Unauthorized",
-  "mensagem": "Token ausente ou invalido",
-  "path": "/api/applications",
-  "timestamp": "2025-04-10T14:00:00"
+  "success": false,
+  "message": "Token ausente ou invalido"
 }
 ```
 
@@ -128,4 +127,4 @@ Retornado quando o token JWT esta ausente ou invalido.
 2. Busca todas as candidaturas do usuario no banco.
 3. Para cada candidatura, busca os dados da vaga associada.
 4. Agrupa as candidaturas por status nas colunas do Kanban.
-5. Retorna o objeto Kanban com `200 OK`.
+5. Retorna o objeto Kanban dentro do envelope `ApiResponse` com `200 OK`.

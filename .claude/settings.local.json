@@ -17,7 +17,9 @@
       "Bash(cat D:/Projetos/Intellij/api/SearchJobsDocs/docs/resumes/upload/*.mdx)",
       "Bash(jar tf:*)",
       "Bash(\"/c/Program Files/Java/jdk-21/bin/javap.exe\" -p /tmp/openai-core/com/openai/errors/OpenAIServiceException.class)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(mkdir -p D:/Projetos/Intellij/api/SearchJobsDocs/docs/auth/forgot-password)",
+      "Bash(mkdir -p D:/Projetos/Intellij/api/SearchJobsDocs/docs/auth/reset-password)"
     ]
   }
 }
