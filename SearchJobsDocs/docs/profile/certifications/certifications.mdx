@@ -46,21 +46,30 @@ Nenhum.
 Status: `200 OK`
 
 ```json
-[
-  {
-    "id": 1,
-    "nomeCertificacao": "AWS Certified Developer",
-    "instituicao": "Amazon Web Services",
-    "dataObtencao": "2023-06"
-  }
-]
+{
+  "success": true,
+  "message": "Certificacoes obtidas com sucesso",
+  "data": [
+    {
+      "id": 1,
+      "nomeCertificacao": "AWS Certified Developer",
+      "instituicao": "Amazon Web Services",
+      "dataObtencao": "2023-06"
+    }
+  ]
+}
 ```
 
 #### Erros
 
 `401 Unauthorized`
 
-Retornado quando o token JWT esta ausente ou invalido.
+```json
+{
+  "success": false,
+  "message": "Token ausente ou invalido"
+}
+```
 
 ---
 
@@ -108,21 +117,30 @@ Substitui completamente as certificacoes do usuario autenticado pela lista forne
 Status: `200 OK`
 
 ```json
-[
-  {
-    "id": 2,
-    "nomeCertificacao": "AWS Certified Developer",
-    "instituicao": "Amazon Web Services",
-    "dataObtencao": "2023-06"
-  }
-]
+{
+  "success": true,
+  "message": "Certificacoes atualizadas com sucesso",
+  "data": [
+    {
+      "id": 2,
+      "nomeCertificacao": "AWS Certified Developer",
+      "instituicao": "Amazon Web Services",
+      "dataObtencao": "2023-06"
+    }
+  ]
+}
 ```
 
 #### Erros
 
 `401 Unauthorized`
 
-Retornado quando o token JWT esta ausente ou invalido.
+```json
+{
+  "success": false,
+  "message": "Token ausente ou invalido"
+}
+```
 
 ## Regras de Negocio
 
@@ -135,4 +153,4 @@ Retornado quando o token JWT esta ausente ou invalido.
 1. Extrai o `userId` do JWT no header `Authorization`.
 2. Deleta todas as certificacoes existentes do usuario.
 3. Persiste as novas certificacoes.
-4. Retorna a lista atualizada com `200 OK`.
+4. Retorna a lista atualizada dentro do envelope `ApiResponse` com `200 OK`.

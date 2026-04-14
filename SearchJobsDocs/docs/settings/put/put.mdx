@@ -62,18 +62,20 @@ Nenhum.
 
 Status: `200 OK`
 
-Retorna as configuracoes atualizadas no mesmo formato do `GET /api/settings`.
-
 ```json
 {
-  "language": "pt-BR",
-  "theme": "system",
-  "termsAccepted": true,
-  "openAiApiKeyMasked": "sk-****1234",
-  "jsearchApiKeyMasked": "****7890",
-  "hasOpenAiApiKey": true,
-  "hasJsearchApiKey": true,
-  "updatedAt": "2025-04-10T14:00:00"
+  "success": true,
+  "message": "Configuracoes atualizadas com sucesso",
+  "data": {
+    "language": "pt-BR",
+    "theme": "system",
+    "termsAccepted": true,
+    "openAiApiKeyMasked": "sk-****1234",
+    "jsearchApiKeyMasked": "****7890",
+    "hasOpenAiApiKey": true,
+    "hasJsearchApiKey": true,
+    "updatedAt": "2025-04-10T14:00:00"
+  }
 }
 ```
 
@@ -81,15 +83,10 @@ Retorna as configuracoes atualizadas no mesmo formato do `GET /api/settings`.
 
 `401 Unauthorized`
 
-Retornado quando o token JWT esta ausente ou invalido.
-
 ```json
 {
-  "status": 401,
-  "erro": "Unauthorized",
-  "mensagem": "Token ausente ou invalido",
-  "path": "/api/settings",
-  "timestamp": "2025-04-10T14:00:00"
+  "success": false,
+  "message": "Token ausente ou invalido"
 }
 ```
 
@@ -116,4 +113,4 @@ Retornado quando o token JWT esta ausente ou invalido.
 3. Substitui `language`, `theme` e `termsAccepted` pelos valores do body.
 4. Atualiza `openAiApiKey` e `jsearchApiKey` apenas se enviados e nao nulos.
 5. Criptografa as chaves e persiste no banco.
-6. Retorna as configuracoes atualizadas com `200 OK`.
+6. Retorna as configuracoes atualizadas dentro do envelope `ApiResponse` com `200 OK`.

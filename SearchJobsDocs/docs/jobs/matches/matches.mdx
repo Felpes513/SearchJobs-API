@@ -44,29 +44,37 @@ Nenhum.
 Status: `200 OK`
 
 ```json
-[
-  {
-    "jobId": 1,
-    "titulo": "Backend Developer - Java",
-    "empresa": "Tech Corp",
-    "localizacao": "Sao Paulo, SP",
-    "modeloTrabalho": "Remote",
-    "jobUrl": "https://www.linkedin.com/jobs/view/abc123",
-    "score": 87.5,
-    "justificativa": "O candidato possui experiencia solida em Java e Spring Boot, que sao os principais requisitos da vaga.",
-    "pontosFortres": ["Java", "Spring Boot", "PostgreSQL"],
-    "gaps": ["Kubernetes", "AWS"]
-  }
-]
+{
+  "success": true,
+  "message": "Matches obtidos com sucesso",
+  "data": [
+    {
+      "jobId": 1,
+      "titulo": "Backend Developer - Java",
+      "empresa": "Tech Corp",
+      "localizacao": "Sao Paulo, SP",
+      "modeloTrabalho": "Remote",
+      "jobUrl": "https://www.linkedin.com/jobs/view/abc123",
+      "score": 87.5,
+      "justificativa": "O candidato possui experiencia solida em Java e Spring Boot, que sao os principais requisitos da vaga.",
+      "pontosFortres": ["Java", "Spring Boot", "PostgreSQL"],
+      "gaps": ["Kubernetes", "AWS"]
+    }
+  ]
+}
 ```
 
 #### Lista vazia (nenhum match calculado)
 
 ```json
-[]
+{
+  "success": true,
+  "message": "Matches obtidos com sucesso",
+  "data": []
+}
 ```
 
-### Campos da Resposta
+### Campos de `data`
 
 | Campo          | Tipo         | Descricao                                                        |
 |----------------|--------------|------------------------------------------------------------------|
@@ -85,7 +93,12 @@ Status: `200 OK`
 
 `401 Unauthorized`
 
-Retornado quando o token JWT esta ausente ou invalido.
+```json
+{
+  "success": false,
+  "message": "Token ausente ou invalido"
+}
+```
 
 ## Regras de Negocio
 
@@ -100,4 +113,4 @@ Retornado quando o token JWT esta ausente ou invalido.
 2. Busca todos os `JobMatch` do usuario no banco.
 3. Para cada match, busca os dados da vaga associada.
 4. Filtra matches cuja vaga nao existe mais no banco.
-5. Retorna a lista com `200 OK`.
+5. Retorna a lista dentro do envelope `ApiResponse` com `200 OK`.

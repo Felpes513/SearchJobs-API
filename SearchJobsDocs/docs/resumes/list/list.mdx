@@ -50,88 +50,57 @@ Status: `200 OK`
 
 ```json
 {
-  "content": [
-    {
-      "fileName": "curriculo-joao.pdf",
-      "createdAt": "2024-01-20T14:00:00",
-      "extraido": true,
-      "nome": "Joao Silva",
-      "email": "joao@email.com",
-      "telefone": "(11) 99999-9999",
-      "cidade": "Sao Paulo",
-      "estado": "SP",
-      "linkedinUrl": "https://linkedin.com/in/joao",
-      "githubUrl": "https://github.com/joao",
-      "resumoProfissional": "Desenvolvedor Backend com 5 anos de experiencia em Java e Spring Boot.",
-      "skills": ["Java", "Spring Boot", "PostgreSQL", "Docker"],
-      "experiencias": [
-        {
-          "cargo": "Desenvolvedor Backend",
-          "empresa": "Tech Corp",
-          "descricao": "Desenvolvimento de APIs REST com Java e Spring Boot",
-          "dataInicio": "2022-01",
-          "dataFim": "2024-12"
-        }
-      ],
-      "certificacoes": [
-        {
-          "nome": "AWS Cloud Practitioner",
-          "instituicao": "Amazon Web Services",
-          "dataObtencao": "2023-06"
-        }
-      ],
-      "projetos": [
-        {
-          "nome": "SearchJobs",
-          "descricao": "API de busca de vagas com IA",
-          "stack": "Java, Spring Boot, PostgreSQL",
-          "link": "https://github.com/joao/searchjobs"
-        }
-      ]
-    }
-  ],
-  "totalElements": 1,
-  "totalPages": 1,
-  "number": 0,
-  "size": 10,
-  "first": true,
-  "last": true,
-  "empty": false
-}
-```
-
-#### Curriculo ainda nao extraido
-
-Quando o curriculo foi enviado mas ainda nao passou pela extracao de IA, apenas os dados do arquivo sao retornados:
-
-```json
-{
-  "content": [
-    {
-      "fileName": "curriculo-joao.pdf",
-      "createdAt": "2024-01-20T14:00:00",
-      "extraido": false,
-      "nome": null,
-      "email": null,
-      "telefone": null,
-      "cidade": null,
-      "estado": null,
-      "linkedinUrl": null,
-      "githubUrl": null,
-      "resumoProfissional": null,
-      "skills": null,
-      "experiencias": null,
-      "certificacoes": null,
-      "projetos": null
-    }
-  ],
-  "totalElements": 1,
-  "totalPages": 1,
-  "number": 0,
-  "size": 10,
-  "first": true,
-  "last": true,
-  "empty": false
+  "success": true,
+  "message": "Curriculos obtidos com sucesso",
+  "data": {
+    "content": [
+      {
+        "fileName": "curriculo-joao.pdf",
+        "createdAt": "2024-01-20T14:00:00",
+        "extraido": true,
+        "nome": "Joao Silva",
+        "email": "joao@email.com",
+        "telefone": "(11) 99999-9999",
+        "cidade": "Sao Paulo",
+        "estado": "SP",
+        "linkedinUrl": "https://linkedin.com/in/joao",
+        "githubUrl": "https://github.com/joao",
+        "resumoProfissional": "Desenvolvedor Backend com 5 anos de experiencia em Java e Spring Boot.",
+        "skills": ["Java", "Spring Boot", "PostgreSQL", "Docker"],
+        "experiencias": [
+          {
+            "cargo": "Desenvolvedor Backend",
+            "empresa": "Tech Corp",
+            "descricao": "Desenvolvimento de APIs REST com Java e Spring Boot",
+            "dataInicio": "2022-01",
+            "dataFim": "2024-12"
+          }
+        ],
+        "certificacoes": [
+          {
+            "nome": "AWS Cloud Practitioner",
+            "instituicao": "Amazon Web Services",
+            "dataObtencao": "2023-06"
+          }
+        ],
+        "projetos": [
+          {
+            "nome": "SearchJobs",
+            "descricao": "API de busca de vagas com IA",
+            "stack": "Java, Spring Boot, PostgreSQL",
+            "link": "https://github.com/joao/searchjobs"
+          }
+        ]
+      }
+    ],
+    "totalElements": 1,
+    "totalPages": 1,
+    "number": 0,
+    "size": 10,
+    "first": true,
+    "last": true,
+    "empty": false
+  }
 }
 ```
 
@@ -139,18 +108,22 @@ Quando o curriculo foi enviado mas ainda nao passou pela extracao de IA, apenas 
 
 ```json
 {
-  "content": [],
-  "totalElements": 0,
-  "totalPages": 0,
-  "number": 0,
-  "size": 10,
-  "first": true,
-  "last": true,
-  "empty": true
+  "success": true,
+  "message": "Curriculos obtidos com sucesso",
+  "data": {
+    "content": [],
+    "totalElements": 0,
+    "totalPages": 0,
+    "number": 0,
+    "size": 10,
+    "first": true,
+    "last": true,
+    "empty": true
+  }
 }
 ```
 
-### Campos da Resposta
+### Campos de `data`
 
 | Campo              | Tipo         | Descricao                                                              |
 |--------------------|--------------|------------------------------------------------------------------------|
@@ -170,46 +143,14 @@ Quando o curriculo foi enviado mas ainda nao passou pela extracao de IA, apenas 
 | certificacoes      | Array Object | Lista de certificacoes                                                 |
 | projetos           | Array Object | Lista de projetos                                                      |
 
-#### Campos de `experiencias`
-
-| Campo     | Tipo   | Descricao                       |
-|-----------|--------|---------------------------------|
-| cargo     | String | Titulo do cargo                 |
-| empresa   | String | Nome da empresa                 |
-| descricao | String | Descricao das atividades        |
-| dataInicio| String | Data de inicio (formato YYYY-MM)|
-| dataFim   | String | Data de fim (formato YYYY-MM)   |
-
-#### Campos de `certificacoes`
-
-| Campo        | Tipo   | Descricao                         |
-|--------------|--------|-----------------------------------|
-| nome         | String | Nome da certificacao              |
-| instituicao  | String | Instituicao emissora              |
-| dataObtencao | String | Data de obtencao (formato YYYY-MM)|
-
-#### Campos de `projetos`
-
-| Campo    | Tipo   | Descricao                   |
-|----------|--------|-----------------------------|
-| nome     | String | Nome do projeto             |
-| descricao| String | Descricao do projeto        |
-| stack    | String | Tecnologias utilizadas      |
-| link     | String | Link do repositorio ou demo |
-
 ### Erros
 
 `401 Unauthorized`
 
-Retornado quando o token JWT esta ausente ou invalido.
-
 ```json
 {
-  "status": 401,
-  "erro": "Unauthorized",
-  "mensagem": "Token ausente ou invalido",
-  "path": "/api/resumes",
-  "timestamp": "2024-01-15T10:30:00"
+  "success": false,
+  "message": "Token ausente ou invalido"
 }
 ```
 
@@ -219,11 +160,10 @@ Retornado quando o token JWT esta ausente ou invalido.
 - O ID do usuario e extraido diretamente do JWT, sem necessidade de parametro adicional.
 - Os resultados sao ordenados por `createdAt` de forma decrescente (mais recente primeiro).
 - O campo `extraido` indica se a extracao via IA ja foi realizada. Se `false`, os demais campos de conteudo serao `null`.
-- Para extrair os dados do curriculo, utilize `POST /api/resumes/{id}/extract`.
 
 ## Fluxo Resumido
 
 1. Extrai o `userId` do JWT no header `Authorization`.
 2. Busca os curriculos do `userId` com paginacao e ordenacao por data decrescente.
 3. Para cada curriculo, verifica se `parsedJson` esta preenchido e desserializa os dados estruturados.
-4. Retorna a pagina com `200 OK`.
+4. Retorna a pagina dentro do envelope `ApiResponse` com `200 OK`.

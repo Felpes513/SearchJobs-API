@@ -1,0 +1,97 @@
+---
+id: notifications-list
+title: Listar Notificações
+---
+
+## Descricao
+
+Retorna todas as notificacoes do usuario autenticado, ordenadas da mais recente para a mais antiga. Inclui tambem notificacoes globais (sem usuario vinculado), como alertas de cota da API.
+
+## Autenticacao
+
+- Necessita autenticacao: Sim
+- Tipo: Bearer JWT
+- Header: `Authorization: Bearer <access_token>`
+
+## Request
+
+### Metodo e URL
+
+`GET /api/notifications`
+
+### Headers
+
+| Header        | Valor                   |
+|---------------|-------------------------|
+| Authorization | `Bearer <access_token>` |
+
+### Query Params
+
+Nenhum.
+
+### Body
+
+Nenhum.
+
+## Response
+
+### Sucesso
+
+Status: `200 OK`
+
+```json
+{
+  "success": true,
+  "message": "Notificacoes obtidas com sucesso",
+  "data": [
+    {
+      "id": 1,
+      "mensagem": "Voce usou 150 de 200 requisicoes mensais da API JSearch.",
+      "tipo": "AVISO",
+      "lida": false,
+      "createdAt": "2025-04-10T14:00:00"
+    },
+    {
+      "id": 2,
+      "mensagem": "Voce usou 190 de 200 requisicoes mensais da API JSearch.",
+      "tipo": "CRITICO",
+      "lida": true,
+      "createdAt": "2025-04-09T10:00:00"
+    }
+  ]
+}
+```
+
+### Campos de `data`
+
+| Campo     | Tipo    | Descricao                                               |
+|-----------|---------|---------------------------------------------------------|
+| id        | Long    | ID da notificacao                                       |
+| mensagem  | String  | Texto da notificacao                                    |
+| tipo      | String  | Tipo da notificacao (`AVISO`, `CRITICO`)                |
+| lida      | Boolean | Indica se o usuario ja leu a notificacao                |
+| createdAt | String  | Data e hora de criacao da notificacao (ISO 8601)        |
+
+### Erros
+
+`401 Unauthorized`
+
+```json
+{
+  "success": false,
+  "message": "Token ausente ou invalido"
+}
+```
+
+## Regras de Negocio
+
+- Retorna notificacoes do usuario autenticado **e** notificacoes globais (`userId` nulo).
+- Ordenadas por `createdAt` descendente (mais recente primeiro).
+- O campo `lida` reflete o estado atual — use `PATCH /{id}/read` para marcar como lida.
+
+## Fluxo Resumido
+
+1. Extrai o `userId` do JWT no header `Authorization`.
+2. Busca no banco todas as notificacoes do usuario ou sem usuario vinculado.
+3. Ordena por `createdAt` descendente.
+4. Retorna a lista dentro do envelope `ApiResponse` com `200 OK`.

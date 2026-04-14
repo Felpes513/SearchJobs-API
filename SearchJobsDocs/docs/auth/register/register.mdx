@@ -44,7 +44,8 @@ Status: `201 Created`
 
 ```json
 {
-  "mensagem": "Usuario cadastrado com sucesso"
+  "success": true,
+  "message": "Usuario cadastrado com sucesso"
 }
 ```
 
@@ -56,26 +57,20 @@ Retornado quando o email informado ja esta cadastrado.
 
 ```json
 {
-  "status": 409,
-  "erro": "Conflict",
-  "mensagem": "Email ja cadastrado: felipe@email.com",
-  "path": "/api/auth/register",
-  "timestamp": "2024-01-15T10:30:00"
+  "success": false,
+  "message": "Email ja cadastrado: felipe@email.com"
 }
 ```
 
 `422 Unprocessable Entity`
 
-Retornado quando ha campos invalidos no body. O campo `campos` indica quais fields falharam.
+Retornado quando ha campos invalidos no body.
 
 ```json
 {
-  "status": 422,
-  "erro": "Validation Error",
-  "mensagem": "Erro de validacao nos campos",
-  "path": "/api/auth/register",
-  "timestamp": "2024-01-15T10:30:00",
-  "campos": {
+  "success": false,
+  "message": "Erro de validacao nos campos",
+  "errors": {
     "nome": "Nome e obrigatorio",
     "senha": "Senha deve ter no minimo 6 caracteres"
   }

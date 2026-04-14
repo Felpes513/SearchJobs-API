@@ -32,6 +32,55 @@ Esta documentacao descreve a API `Search Jobs`, implementada em Spring Boot 3.5 
 | POST   | `/api/resumes/upload`       | Enviar curriculo em PDF               |
 | GET    | `/api/resumes`              | Listar curriculos do usuario logado   |
 | POST   | `/api/resumes/{id}/extract` | Extrair dados do curriculo via IA     |
+| DELETE | `/api/resumes/{id}`         | Deletar curriculo                     |
+
+### Vagas (requerem autenticacao)
+
+| Metodo | Rota                  | Descricao                                              |
+|--------|-----------------------|--------------------------------------------------------|
+| GET    | `/api/jobs/search`    | Buscar vagas via JSearch + IA ordenadas por relevancia |
+| POST   | `/api/jobs/match-all` | Calcular compatibilidade com todas as vagas via IA     |
+| GET    | `/api/jobs/matches`   | Retornar matches previamente calculados                |
+
+### Candidaturas (requerem autenticacao)
+
+| Metodo | Rota                            | Descricao                            |
+|--------|---------------------------------|--------------------------------------|
+| GET    | `/api/applications`             | Listar candidaturas em formato Kanban|
+| POST   | `/api/applications`             | Criar nova candidatura               |
+| PUT    | `/api/applications/{id}/status` | Atualizar status da candidatura      |
+| DELETE | `/api/applications/{id}`        | Deletar candidatura                  |
+
+### Perfil (requerem autenticacao)
+
+| Metodo | Rota                          | Descricao                                    |
+|--------|-------------------------------|----------------------------------------------|
+| GET    | `/api/profile`                | Retornar perfil do usuario                   |
+| PUT    | `/api/profile`                | Atualizar perfil do usuario                  |
+| GET    | `/api/profile/skills`         | Listar skills                                |
+| PUT    | `/api/profile/skills`         | Substituir todas as skills                   |
+| GET    | `/api/profile/experiences`    | Listar experiencias profissionais            |
+| PUT    | `/api/profile/experiences`    | Substituir todas as experiencias             |
+| GET    | `/api/profile/certifications` | Listar certificacoes                         |
+| PUT    | `/api/profile/certifications` | Substituir todas as certificacoes            |
+| GET    | `/api/profile/projects`       | Listar projetos                              |
+| PUT    | `/api/profile/projects`       | Substituir todos os projetos                 |
+| POST   | `/api/profile/github/sync`    | Sincronizar projetos com repositorios GitHub |
+
+### Configuracoes (requerem autenticacao)
+
+| Metodo | Rota            | Descricao                                   |
+|--------|-----------------|---------------------------------------------|
+| GET    | `/api/settings` | Retornar configuracoes do usuario           |
+| PUT    | `/api/settings` | Substituir todas as configuracoes           |
+| PATCH  | `/api/settings` | Atualizar parcialmente as configuracoes     |
+
+### Notificacoes (requerem autenticacao)
+
+| Metodo | Rota                            | Descricao                          |
+|--------|---------------------------------|------------------------------------|
+| GET    | `/api/notifications`            | Listar notificacoes do usuario     |
+| PATCH  | `/api/notifications/{id}/read`  | Marcar notificacao como lida       |
 
 ## Regras Tecnicas Relevantes
 
@@ -44,10 +93,15 @@ Esta documentacao descreve a API `Search Jobs`, implementada em Spring Boot 3.5 
 
 ## Referencias Internas
 
-| Modulo         | Controller           | Caso de Uso                                          | Servico                                                |
-|----------------|----------------------|------------------------------------------------------|--------------------------------------------------------|
-| Autenticacao   | `AuthController`     | `AuthUseCase`                                        | `AuthService`                                          |
-| Curriculos     | `ResumeController`   | `ResumeUseCase`, `ResumeExtractionUseCase`           | `ResumeService`, `ResumeExtractionService`             |
+| Modulo         | Controller                   | Servico                                                |
+|----------------|------------------------------|--------------------------------------------------------|
+| Autenticacao   | `AuthController`             | `AuthService`                                          |
+| Curriculos     | `ResumeController`           | `ResumeService`, `ResumeExtractionService`             |
+| Vagas          | `JobController`              | `JobSearchService`, `JobMatchService`                  |
+| Candidaturas   | `ApplicationController`      | `ApplicationService`                                   |
+| Perfil         | `UserProfileController`      | `UserProfileService`                                   |
+| Configuracoes  | `UserSettingsController`     | `UserSettingsService`                                  |
+| Notificacoes   | `NotificationController`     | `NotificationService`                                  |
 
 ## Swagger UI
 

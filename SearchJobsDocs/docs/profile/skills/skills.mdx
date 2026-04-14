@@ -46,25 +46,34 @@ Nenhum.
 Status: `200 OK`
 
 ```json
-[
-  {
-    "id": 1,
-    "nomeSkill": "Java",
-    "nivel": "AVANCADO"
-  },
-  {
-    "id": 2,
-    "nomeSkill": "Spring Boot",
-    "nivel": "AVANCADO"
-  }
-]
+{
+  "success": true,
+  "message": "Skills obtidas com sucesso",
+  "data": [
+    {
+      "id": 1,
+      "nomeSkill": "Java",
+      "nivel": "AVANCADO"
+    },
+    {
+      "id": 2,
+      "nomeSkill": "Spring Boot",
+      "nivel": "AVANCADO"
+    }
+  ]
+}
 ```
 
 #### Erros
 
 `401 Unauthorized`
 
-Retornado quando o token JWT esta ausente ou invalido.
+```json
+{
+  "success": false,
+  "message": "Token ausente ou invalido"
+}
+```
 
 ---
 
@@ -104,44 +113,36 @@ Substitui completamente as skills do usuario autenticado pela lista fornecida.
 Status: `200 OK`
 
 ```json
-[
-  {
-    "id": 3,
-    "nomeSkill": "Java",
-    "nivel": null
-  },
-  {
-    "id": 4,
-    "nomeSkill": "Spring Boot",
-    "nivel": null
-  },
-  {
-    "id": 5,
-    "nomeSkill": "Docker",
-    "nivel": null
-  }
-]
+{
+  "success": true,
+  "message": "Skills atualizadas com sucesso",
+  "data": [
+    { "id": 3, "nomeSkill": "Java", "nivel": null },
+    { "id": 4, "nomeSkill": "Spring Boot", "nivel": null },
+    { "id": 5, "nomeSkill": "Docker", "nivel": null }
+  ]
+}
 ```
 
 #### Erros
 
 `400 Bad Request`
 
-Retornado quando a lista de skills esta vazia.
-
 ```json
 {
-  "status": 400,
-  "erro": "Bad Request",
-  "mensagem": "A lista de skills nao pode ser vazia",
-  "path": "/api/profile/skills",
-  "timestamp": "2024-01-15T10:30:00"
+  "success": false,
+  "message": "A lista de skills nao pode ser vazia"
 }
 ```
 
 `401 Unauthorized`
 
-Retornado quando o token JWT esta ausente ou invalido.
+```json
+{
+  "success": false,
+  "message": "Token ausente ou invalido"
+}
+```
 
 ## Regras de Negocio
 
@@ -155,4 +156,4 @@ Retornado quando o token JWT esta ausente ou invalido.
 2. Valida que a lista nao esta vazia.
 3. Deleta todas as skills existentes do usuario.
 4. Persiste as novas skills.
-5. Retorna a lista atualizada com `200 OK`.
+5. Retorna a lista atualizada dentro do envelope `ApiResponse` com `200 OK`.

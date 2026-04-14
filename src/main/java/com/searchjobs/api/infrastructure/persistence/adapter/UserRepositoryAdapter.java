@@ -17,19 +17,31 @@ public class UserRepositoryAdapter implements UserRepository {
 
     @Override
     public User save(User user) {
-        UserJpaEntity entity = UserJpaEntity.builder()
-                .nome(user.getNome())
-                .email(user.getEmail())
-                .senhaHash(user.getSenhaHash())
-                .build();
+        UserJpaEntity entity;
 
-        UserJpaEntity saved = jpaRepository.save(entity);
-        return toDomain(saved);
+        if (user.getId() != null) {
+            entity = jpaRepository.findById(user.getId())
+                    .orElse(new UserJpaEntity());
+        } else {
+            entity = jpaRepository.findByEmail(user.getEmail())
+                    .orElse(new UserJpaEntity());
+        }
+
+        entity.setNome(user.getNome());
+        entity.setEmail(user.getEmail());
+        entity.setSenhaHash(user.getSenhaHash());
+
+        return toDomain(jpaRepository.save(entity));
     }
 
     @Override
     public Optional<User> findByEmail(String email) {
         return jpaRepository.findByEmail(email).map(this::toDomain);
+    }
+
+    @Override
+    public Optional<User> findById(Long id) {
+        return jpaRepository.findById(id).map(this::toDomain);
     }
 
     @Override

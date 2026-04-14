@@ -43,8 +43,12 @@ Status: `200 OK`
 
 ```json
 {
-  "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  "success": true,
+  "message": "Login realizado com sucesso",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
 }
 ```
 
@@ -56,26 +60,20 @@ Retornado quando o email ou senha informados estao incorretos.
 
 ```json
 {
-  "status": 401,
-  "erro": "Unauthorized",
-  "mensagem": "Email ou senha invalidos",
-  "path": "/api/auth/login",
-  "timestamp": "2024-01-15T10:30:00"
+  "success": false,
+  "message": "Email ou senha invalidos"
 }
 ```
 
 `422 Unprocessable Entity`
 
-Retornado quando ha campos invalidos no body. O campo `campos` indica quais fields falharam.
+Retornado quando ha campos invalidos no body.
 
 ```json
 {
-  "status": 422,
-  "erro": "Validation Error",
-  "mensagem": "Erro de validacao nos campos",
-  "path": "/api/auth/login",
-  "timestamp": "2024-01-15T10:30:00",
-  "campos": {
+  "success": false,
+  "message": "Erro de validacao nos campos",
+  "errors": {
     "email": "Email invalido"
   }
 }
@@ -106,4 +104,4 @@ Motivos possiveis:
 2. Tenta autenticar email e senha no Spring Security.
 3. Busca o usuario por email no repositorio.
 4. Gera `accessToken` e `refreshToken`.
-5. Retorna os tokens com `200 OK`.
+5. Retorna os tokens dentro do envelope `ApiResponse` com `200 OK`.

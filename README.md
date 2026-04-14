@@ -70,11 +70,11 @@ O SearchJobs é um projeto pessoal criado com dois objetivos:
 
 O projeto está em evolução contínua. Algumas melhorias planejadas:
 
-- [ ] Frontend web para consumo da API
+- [x] Frontend web para consumo da API
 - [ ] Hospedagem em VPS com domínio próprio
 - [ ] Notificações por e-mail quando novas vagas compatíveis aparecerem
 - [ ] Suporte a múltiplos idiomas nas buscas (inglês, espanhol)
-- [ ] Histórico de candidaturas
+- [x] Histórico de candidaturas
 - [ ] Integração com mais plataformas de vagas
 
 ---

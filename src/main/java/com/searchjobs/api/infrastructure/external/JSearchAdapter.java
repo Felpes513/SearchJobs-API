@@ -1,6 +1,7 @@
 package com.searchjobs.api.infrastructure.external;
 
 import com.searchjobs.api.application.dto.internal.JSearchResponseDto;
+import com.searchjobs.api.application.service.ApiUsageService;
 import com.searchjobs.api.domain.model.Job;
 import com.searchjobs.api.domain.port.out.JobSearchPort;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,13 +17,16 @@ public class JSearchAdapter implements JobSearchPort {
 
     private final String apiHost;
     private final String baseUrl;
+    private final ApiUsageService apiUsageService;
 
     public JSearchAdapter(
             @Value("${jsearch.api-host}") String apiHost,
-            @Value("${jsearch.base-url}") String baseUrl
+            @Value("${jsearch.base-url}") String baseUrl,
+            ApiUsageService apiUsageService
     ) {
         this.apiHost = apiHost;
         this.baseUrl = baseUrl;
+        this.apiUsageService = apiUsageService;
     }
 
     @Override
@@ -53,9 +57,13 @@ public class JSearchAdapter implements JobSearchPort {
             return Collections.emptyList();
         }
 
-        return response.getData().stream()
+        List<Job> resultado = response.getData().stream()
                 .map(this::toDomain)
                 .toList();
+
+        apiUsageService.registrarRequisicao();
+
+        return resultado;
     }
 
     private Job toDomain(JSearchResponseDto.JobDataDto dto) {

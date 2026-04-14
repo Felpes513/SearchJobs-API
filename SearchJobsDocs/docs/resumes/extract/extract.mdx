@@ -51,11 +51,17 @@ Status: `200 OK`
 
 ```json
 {
-  "resumeId": 1,
-  "mensagem": "Curriculo extraido e perfil atualizado com sucesso",
-  "camposFaltando": ["telefone"]
+  "success": true,
+  "message": "Dados extraidos com sucesso",
+  "data": {
+    "resumeId": 1,
+    "mensagem": "Curriculo extraido e perfil atualizado com sucesso",
+    "camposFaltando": ["telefone"]
+  }
 }
 ```
+
+### Campos de `data`
 
 | Campo          | Tipo         | Descricao                                                                 |
 |----------------|--------------|---------------------------------------------------------------------------|
@@ -77,77 +83,55 @@ Os dados extraidos sao salvos diretamente no perfil do usuario. Os campos possiv
 
 ### Erros
 
-`401 Unauthorized`
-
-Retornado quando o token JWT esta ausente ou invalido.
-
 `400 Bad Request`
-
-Retornado quando a OpenAI API Key nao esta configurada nas settings do usuario.
 
 ```json
 {
-  "status": 400,
-  "erro": "Bad Request",
-  "mensagem": "Configure sua OpenAI API Key nas configuracoes antes de extrair o curriculo",
-  "path": "/api/resumes/1/extract",
-  "timestamp": "2024-01-15T10:30:00"
+  "success": false,
+  "message": "Configure sua OpenAI API Key nas configuracoes antes de extrair o curriculo"
+}
+```
+
+`401 Unauthorized`
+
+```json
+{
+  "success": false,
+  "message": "Token ausente ou invalido"
 }
 ```
 
 `404 Not Found`
 
-Retornado quando nao existe curriculo com o ID informado.
-
 ```json
 {
-  "status": 404,
-  "erro": "Not Found",
-  "mensagem": "Curriculo nao encontrado com id: 99",
-  "path": "/api/resumes/99/extract",
-  "timestamp": "2024-01-15T10:30:00"
+  "success": false,
+  "message": "Curriculo nao encontrado com id: 99"
 }
 ```
 
 `502 Bad Gateway`
 
-Retornado quando ocorre erro de comunicacao com o servico OpenAI.
-
 ```json
 {
-  "status": 502,
-  "erro": "Bad Gateway",
-  "mensagem": "Erro ao comunicar com o servico de IA",
-  "path": "/api/resumes/1/extract",
-  "timestamp": "2024-01-15T10:30:00"
+  "success": false,
+  "message": "Erro ao comunicar com o servico de IA"
 }
 ```
 
-`502 Bad Gateway`
-
-Retornado quando a credencial da API OpenAI e invalida, ausente ou sem permissao.
-
 ```json
 {
-  "status": 502,
-  "erro": "Bad Gateway",
-  "mensagem": "Servico de IA indisponivel: credencial da API invalida ou ausente.",
-  "path": "/api/resumes/1/extract",
-  "timestamp": "2024-01-15T10:30:00"
+  "success": false,
+  "message": "Servico de IA indisponivel: credencial da API invalida ou ausente."
 }
 ```
 
 `503 Service Unavailable`
 
-Retornado quando os creditos da API OpenAI estao esgotados ou o servico atinge o limite de requisicoes (rate limit).
-
 ```json
 {
-  "status": 503,
-  "erro": "Service Unavailable",
-  "mensagem": "Creditos da API de IA esgotados. Verifique o saldo da conta OpenAI.",
-  "path": "/api/resumes/1/extract",
-  "timestamp": "2024-01-15T10:30:00"
+  "success": false,
+  "message": "Creditos da API de IA esgotados. Verifique o saldo da conta OpenAI."
 }
 ```
 
@@ -156,11 +140,11 @@ Retornado quando os creditos da API OpenAI estao esgotados ou o servico atinge o
 - O usuario precisa ter a **OpenAI API Key** configurada nas settings (`PUT /api/settings`).
 - O curriculo precisa ter sido previamente enviado via `POST /api/resumes/upload`.
 - O texto e extraido do PDF usando Apache PDFBox.
-- O JSON gerado pela IA e persistido no campo `parsedJson` da tabela `resumes` (tipo JSONB no PostgreSQL).
+- O JSON gerado pela IA e persistido no campo `parsedJson` da tabela `resumes`.
 - Campos nao encontrados no curriculo aparecem na lista `camposFaltando` da resposta.
 - Os dados anteriores do perfil (skills, experiencias, certificacoes, projetos) sao limpos antes de salvar os novos dados extraidos.
 - O perfil base do usuario e recriado automaticamente apos a extracao.
-- Invalida automaticamente os caches de `GET /api/jobs/search` e `POST /api/jobs/match-all` do usuario, garantindo que as proximas chamadas reflitam o perfil atualizado.
+- Invalida automaticamente os caches de `GET /api/jobs/search` e `POST /api/jobs/match-all` do usuario.
 
 ## Fluxo Resumido
 
@@ -169,6 +153,6 @@ Retornado quando os creditos da API OpenAI estao esgotados ou o servico atinge o
 3. Extrai o texto bruto do arquivo PDF via PDFBox.
 4. Envia o texto ao modelo GPT via OpenAI API (usando a chave do usuario).
 5. Persiste o texto extraido e o JSON estruturado no banco.
-6. Popula automaticamente o perfil do usuario com os dados extraidos (skills, experiencias, certificacoes, projetos).
+6. Popula automaticamente o perfil do usuario com os dados extraidos.
 7. Invalida os caches de `jobs-search` e `jobs-match-all` do usuario.
-8. Retorna o resultado com os campos faltantes (se houver) e `200 OK`.
+8. Retorna o resultado dentro do envelope `ApiResponse` com `200 OK`.
