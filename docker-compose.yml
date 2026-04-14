@@ -16,6 +16,21 @@ services:
       timeout: 5s
       retries: 5
 
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   searchjobs-api:
     build: .
     restart: unless-stopped
@@ -24,10 +39,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     env_file: .env
     environment:
       # Sobrescreve o DB_URL do .env para apontar ao serviço postgres interno
       DB_URL: jdbc:postgresql://postgres:5432/searchjobs
+      # Sobrescreve o host do RabbitMQ para apontar ao serviço interno
+      RABBITMQ_HOST: rabbitmq
     volumes:
       - resumes_data:/app/uploads/resumes
 
